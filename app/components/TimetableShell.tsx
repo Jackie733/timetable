@@ -51,7 +51,7 @@ export function TimetableShell(props: {
   return (
     <div className="flex min-h-[100svh] flex-col">
       <header className="sticky top-0 z-10 border-b bg-[color:var(--surface)/0.8] backdrop-blur">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+        <div className="container mx-auto flex h-14 items-center justify-between px-2 sm:px-4">
           <Link to="/" className="hero-title font-semibold tracking-tight">
             Timetable <span className="hero-subtitle ml-2">课程表</span>
           </Link>
@@ -138,8 +138,10 @@ export function TimetableShell(props: {
           </div>
         </div>
       </header>
-      <main className="container mx-auto flex-1 px-4 py-6">
-        {title && <h1 className="mb-4 text-xl font-semibold">{title}</h1>}
+      <main className="container mx-auto flex-1 px-2 py-4 sm:px-4 sm:py-6">
+        {title && (
+          <h1 className="mb-4 text-lg font-semibold sm:text-xl">{title}</h1>
+        )}
         {children}
       </main>
 

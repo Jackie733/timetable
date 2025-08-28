@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import {
   useLoaderData,
@@ -225,6 +225,18 @@ export default function Home() {
     onConfirm: () => {},
     onCancel: () => {},
   });
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const showConfirm = (title: string, message: string): Promise<boolean> => {
     return new Promise(resolve => {
@@ -313,16 +325,39 @@ export default function Home() {
             <div className="hero-title">{timetable.name}课表</div>
           </div>
           <div className="p-3">
-            <div className="overflow-x-auto">
-              <table className="table-clean w-full min-w-[720px] table-fixed border-separate border-spacing-0">
+            <div className={`overflow-x-auto ${isMobile ? "pb-2" : ""}`}>
+              <table
+                className={`table-clean w-full table-fixed border-separate border-spacing-0 ${
+                  isMobile ? "text-xs" : "min-w-[720px]"
+                }`}
+                style={
+                  isMobile
+                    ? {
+                        minWidth: "100vw",
+                        width: "calc(100vw - 2rem)", // 减去padding
+                      }
+                    : {}
+                }
+              >
                 <thead>
                   <tr>
-                    <th className="sticky-col w-20 p-2 text-center align-middle">
+                    <th
+                      className={`sticky-col text-center align-middle ${
+                        isMobile ? "w-12 p-1 text-xs" : "w-20 p-2"
+                      }`}
+                    >
                       节次
                     </th>
                     {Array.from({ length: days }).map((_, i) => (
-                      <th key={i} className="p-2 text-center align-middle">
-                        {dayLabels[i]}
+                      <th
+                        key={i}
+                        className={`text-center align-middle ${
+                          isMobile ? "p-1 text-xs" : "p-2"
+                        }`}
+                      >
+                        {isMobile
+                          ? dayLabels[i].replace("星期", "")
+                          : dayLabels[i]}
                       </th>
                     ))}
                   </tr>
@@ -330,13 +365,25 @@ export default function Home() {
                 <tbody>
                   {segments.map((seg, segIndex) => (
                     <tr key={segIndex}>
-                      <td className="sticky-col bg-[color:var(--surface)] p-2 text-center align-top">
-                        <div className="text-sm font-medium">
+                      <td
+                        className={`sticky-col bg-[color:var(--surface)] text-center align-top ${
+                          isMobile ? "p-1" : "p-2"
+                        }`}
+                      >
+                        <div
+                          className={`font-medium ${isMobile ? "text-xs" : "text-sm"}`}
+                        >
                           {seg.label || segIndex + 1}
                         </div>
-                        <div className="text-[11px] text-[color:var(--muted)]">
+                        <div
+                          className={`text-[color:var(--muted)] ${
+                            isMobile ? "text-[10px]" : "text-[11px]"
+                          }`}
+                        >
                           {seg.startMinutes || seg.endMinutes
-                            ? `${fmt(seg.startMinutes)}–${fmt(seg.endMinutes)}`
+                            ? isMobile
+                              ? fmt(seg.startMinutes)
+                              : `${fmt(seg.startMinutes)}–${fmt(seg.endMinutes)}`
                             : ""}
                         </div>
                       </td>
@@ -355,7 +402,9 @@ export default function Home() {
                         return (
                           <td key={day} className="p-0 align-top">
                             <div
-                              className="min-h-16 cursor-pointer rounded-sm p-2 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
+                              className={`cursor-pointer rounded-sm transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50 ${
+                                isMobile ? "min-h-12 p-1" : "min-h-16 p-2"
+                              }`}
                               onClick={() => {
                                 const session = cellSessions[0]; // 取第一个session作为编辑对象
                                 const course = session
@@ -367,18 +416,24 @@ export default function Home() {
                               {cellSessions.map(s => (
                                 <div
                                   key={s.id}
-                                  className="session-card mb-2 rounded-lg border border-white/40 p-2 text-sm shadow-sm backdrop-blur-sm transition-all hover:scale-[1.02] hover:shadow-md"
+                                  className={`session-card rounded-lg border border-white/40 shadow-sm backdrop-blur-sm transition-all hover:scale-[1.02] hover:shadow-md ${
+                                    isMobile
+                                      ? "mb-1 p-1 text-xs"
+                                      : "mb-2 p-2 text-sm"
+                                  }`}
                                   style={{
                                     backgroundColor: `${courseById.get(s.courseId)?.color || "#a5b4fc"}80`,
                                     backgroundImage: `linear-gradient(135deg, ${courseById.get(s.courseId)?.color || "#a5b4fc"}90 0%, ${courseById.get(s.courseId)?.color || "#a5b4fc"}60 100%)`,
                                     color: "#374151",
                                   }}
                                 >
-                                  <div className="font-medium">
+                                  <div
+                                    className={`font-medium ${isMobile ? "truncate text-xs" : ""}`}
+                                  >
                                     {courseById.get(s.courseId)?.title ??
                                       "课程"}
                                   </div>
-                                  {s.location && (
+                                  {s.location && !isMobile && (
                                     <div className="text-xs opacity-75">
                                       {s.location}
                                     </div>
@@ -400,8 +455,14 @@ export default function Home() {
       {/* Simple Modal for editing a cell */}
       {editingCell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-          <Card className="w-full max-w-md p-4">
-            <div className="mb-3 text-lg font-medium">
+          <Card
+            className={`w-full p-4 ${isMobile ? "mx-2 max-w-sm" : "max-w-md"}`}
+          >
+            <div
+              className={`mb-3 font-medium ${
+                isMobile ? "text-base" : "text-lg"
+              }`}
+            >
               {editingCell.session ? "编辑课时" : "添加课时"}
             </div>
             <Form
@@ -450,7 +511,11 @@ export default function Home() {
               </div>
               <div>
                 <Label>颜色</Label>
-                <div className="mt-2 flex gap-2">
+                <div
+                  className={`mt-2 gap-2 ${
+                    isMobile ? "grid grid-cols-4" : "flex"
+                  }`}
+                >
                   {[
                     "#a5b4fc",
                     "#fca5a5",
@@ -463,7 +528,9 @@ export default function Home() {
                   ].map(color => (
                     <label
                       key={color}
-                      className="relative h-8 w-8 cursor-pointer rounded-full border-2 transition-all hover:scale-110 hover:border-gray-400"
+                      className={`relative cursor-pointer rounded-full border-2 transition-all hover:scale-110 hover:border-gray-400 ${
+                        isMobile ? "h-6 w-6" : "h-8 w-8"
+                      }`}
                       style={{
                         backgroundColor: color,
                         borderColor:
@@ -484,20 +551,29 @@ export default function Home() {
                       />
                       {color === selectedColor && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                          <div className="h-2 w-2 rounded-full bg-gray-700"></div>
+                          <div
+                            className={`rounded-full bg-gray-700 ${
+                              isMobile ? "h-1.5 w-1.5" : "h-2 w-2"
+                            }`}
+                          ></div>
                         </div>
                       )}
                     </label>
                   ))}
                 </div>
               </div>
-              <div className="flex justify-between">
+              <div
+                className={`flex justify-between ${
+                  isMobile ? "flex-col gap-3" : ""
+                }`}
+              >
                 <div>
                   {editingCell.session && (
                     <Button
                       type="button"
                       variant="destructive"
                       size="sm"
+                      className={isMobile ? "w-full" : ""}
                       onClick={async () => {
                         const confirmed = await showConfirm(
                           "删除课时",
@@ -518,16 +594,17 @@ export default function Home() {
                     </Button>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className={`flex gap-2 ${isMobile ? "" : ""}`}>
                   <Button
                     type="button"
                     onClick={() => setEditingCell(null)}
                     variant="ghost"
                     size="sm"
+                    className={isMobile ? "flex-1" : ""}
                   >
                     取消
                   </Button>
-                  <Button disabled={busy}>
+                  <Button disabled={busy} className={isMobile ? "flex-1" : ""}>
                     {editingCell.session ? "更新" : "保存"}
                   </Button>
                 </div>
@@ -549,17 +626,39 @@ export default function Home() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="relative z-10 mx-4 max-w-md bg-white p-6 shadow-lg"
+              className={`relative z-10 bg-white shadow-lg ${
+                isMobile ? "mx-4 max-w-xs p-4" : "mx-4 max-w-md p-6"
+              }`}
             >
-              <h3 className="mb-2 text-lg font-semibold">
+              <h3
+                className={`mb-2 font-semibold ${
+                  isMobile ? "text-base" : "text-lg"
+                }`}
+              >
                 {confirmDialog.title}
               </h3>
-              <p className="mb-6 text-gray-600">{confirmDialog.message}</p>
-              <div className="flex justify-end gap-3">
-                <Button variant="ghost" onClick={confirmDialog.onCancel}>
+              <p
+                className={`mb-6 text-gray-600 ${
+                  isMobile ? "mb-4 text-sm" : ""
+                }`}
+              >
+                {confirmDialog.message}
+              </p>
+              <div
+                className={`flex justify-end gap-3 ${isMobile ? "gap-2" : ""}`}
+              >
+                <Button
+                  variant="ghost"
+                  onClick={confirmDialog.onCancel}
+                  size={isMobile ? "sm" : "default"}
+                >
                   取消
                 </Button>
-                <Button variant="destructive" onClick={confirmDialog.onConfirm}>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDialog.onConfirm}
+                  size={isMobile ? "sm" : "default"}
+                >
                   确定
                 </Button>
               </div>
