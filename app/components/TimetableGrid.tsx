@@ -1,4 +1,4 @@
-import React from "react";
+import { Fragment } from "react";
 import { motion } from "motion/react";
 import type { Course, Session, Timetable } from "../db";
 import {
@@ -41,7 +41,6 @@ export function TimetableGrid({
         className="grid"
         style={{ gridTemplateColumns: `80px repeat(7, minmax(0, 1fr))` }}
       >
-        {/* Header Row */}
         <div />
         {Array.from({ length: 7 }).map((_, d) => (
           <div
@@ -52,9 +51,8 @@ export function TimetableGrid({
           </div>
         ))}
 
-        {/* Time + Day columns */}
         {hours.map((h, idx) => (
-          <React.Fragment key={h}>
+          <Fragment key={h}>
             <div className="border-r px-2 py-1 text-xs text-gray-500">
               {String(h).padStart(2, "0")}:00
             </div>
@@ -65,10 +63,9 @@ export function TimetableGrid({
                 style={{ minHeight: 48 }}
               />
             ))}
-          </React.Fragment>
+          </Fragment>
         ))}
 
-        {/* Sessions as absolute blocks */}
         {Array.from({ length: 7 }).map((_, col) => {
           const day = (timetable.weekStart ?? 1) === 1 ? (col + 1) % 7 : col;
           const daySessions = byDay[day];

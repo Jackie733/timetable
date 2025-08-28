@@ -1,4 +1,4 @@
-import React from "react";
+import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   db,
@@ -38,29 +38,26 @@ interface DeletedRecords {
 
 export default function DataManager({ onClose }: { onClose: () => void }) {
   const prefersReducedMotion = useReducedMotion();
-  const [activeTab, setActiveTab] = React.useState<
+  const [activeTab, setActiveTab] = useState<
     "backup" | "integrity" | "cleanup" | "deleted" | "batch"
   >("backup");
-  const [backups, setBackups] = React.useState<Backup[]>([]);
+  const [backups, setBackups] = useState<Backup[]>([]);
   const [integrityResult, setIntegrityResult] =
-    React.useState<IntegrityResult | null>(null);
-  const [deletedRecords, setDeletedRecords] = React.useState<DeletedRecords>({
+    useState<IntegrityResult | null>(null);
+  const [deletedRecords, setDeletedRecords] = useState<DeletedRecords>({
     timetables: [],
     courses: [],
     sessions: [],
   });
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 批量操作相关状态
-  const [selectedTimetableId, setSelectedTimetableId] =
-    React.useState<string>("");
-  const [availableTimetables, setAvailableTimetables] = React.useState<
-    Timetable[]
-  >([]);
-  const [batchResult, setBatchResult] = React.useState<string>("");
+  const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
+  const [availableTimetables, setAvailableTimetables] = useState<Timetable[]>(
+    []
+  );
+  const [batchResult, setBatchResult] = useState<string>("");
 
-  // 加载备份列表
-  const loadBackups = React.useCallback(async () => {
+  const loadBackups = useCallback(async () => {
     try {
       const backupList = await db.getBackups();
       setBackups(backupList);
@@ -69,8 +66,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
-  // 加载课表列表
-  const loadTimetables = React.useCallback(async () => {
+  const loadTimetables = useCallback(async () => {
     try {
       const timetables = await db.getActive(db.timetables).toArray();
       setAvailableTimetables(timetables);
@@ -82,8 +78,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   }, [selectedTimetableId]);
 
-  // 检查数据完整性
-  const checkIntegrity = React.useCallback(async () => {
+  const checkIntegrity = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await db.checkDataIntegrity();
@@ -95,8 +90,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
-  // 加载已删除的记录
-  const loadDeletedRecords = React.useCallback(async () => {
+  const loadDeletedRecords = useCallback(async () => {
     setIsLoading(true);
     try {
       const [timetables, courses, sessions] = await Promise.all([
@@ -112,7 +106,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
-  // 创建备份
   const createBackup = async () => {
     const name = prompt("请输入备份名称:");
     if (!name) return;
@@ -129,7 +122,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 恢复备份
   const restoreBackup = async (backupId: string) => {
     const confirmRestore = confirm("确定要恢复此备份吗？这将覆盖当前数据。");
     if (!confirmRestore) return;
@@ -150,7 +142,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 导出备份
   const exportBackup = async (backupId: string, backupName: string) => {
     try {
       const blob = await db.exportBackup(backupId);
@@ -167,7 +158,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 导入备份
   const importBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -181,12 +171,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
       alert(`导入失败: ${error}`);
     } finally {
       setIsLoading(false);
-      // 重置文件输入
       event.target.value = "";
     }
   };
 
-  // 清理孤立记录
   const cleanupOrphaned = async () => {
     const confirmCleanup = confirm(
       "确定要清理孤立记录吗？这些记录将被软删除。"
@@ -207,7 +195,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 恢复删除的记录
   const restoreRecord = async (
     type: "timetable" | "course" | "session",
     id: string
@@ -231,7 +218,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 永久删除记录
   const permanentDelete = async (
     type: "timetable" | "course" | "session",
     id: string
@@ -258,7 +244,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 批量操作函数
   const handleDuplicateTimetable = async () => {
     if (!selectedTimetableId) {
       alert("请选择要复制的课表");
@@ -364,7 +349,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab === "backup") {
       loadBackups();
     } else if (activeTab === "integrity") {
@@ -421,7 +406,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="flex h-full flex-col">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
             <h2 className="text-lg font-medium">数据管理</h2>
             <motion.button
@@ -436,7 +420,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             </motion.button>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-[color:var(--border)]">
             {tabs.map(tab => (
               <motion.button
@@ -456,7 +439,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             ))}
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-auto p-4">
             <AnimatePresence mode="wait">
               {isLoading && (
@@ -471,7 +453,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 </motion.div>
               )}
 
-              {/* 备份管理 */}
               {activeTab === "backup" && !isLoading && (
                 <motion.div
                   key="backup"
@@ -564,7 +545,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 </motion.div>
               )}
 
-              {/* 完整性检查 */}
               {activeTab === "integrity" && !isLoading && integrityResult && (
                 <motion.div
                   key="integrity"
@@ -647,7 +627,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 </motion.div>
               )}
 
-              {/* 数据清理 */}
               {activeTab === "cleanup" && !isLoading && (
                 <motion.div
                   key="cleanup"
@@ -690,7 +669,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 </motion.div>
               )}
 
-              {/* 回收站 */}
               {activeTab === "deleted" && !isLoading && (
                 <motion.div
                   key="deleted"
@@ -791,7 +769,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 </motion.div>
               )}
 
-              {/* 批量操作 */}
               {activeTab === "batch" && (
                 <motion.div
                   key="batch"
@@ -806,7 +783,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   exit="exit"
                   transition={springPresets.default}
                 >
-                  {/* 课表选择 */}
                   <div className="space-y-2">
                     <label className="block text-sm font-medium">
                       选择课表:
@@ -825,7 +801,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     </select>
                   </div>
 
-                  {/* 批量操作按钮 */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium">课表管理</h3>
@@ -871,7 +846,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
 
-                  {/* 操作结果 */}
                   {batchResult && (
                     <div className="surface rounded-lg p-4">
                       <h3 className="mb-2 font-medium">操作结果:</h3>
@@ -887,7 +861,6 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     </div>
                   )}
 
-                  {/* CSV导入 */}
                   <div className="surface rounded-lg p-4">
                     <h3 className="mb-2 font-medium">CSV导入</h3>
                     <p className="mb-3 text-sm text-[color:var(--muted)]">

@@ -1,9 +1,9 @@
+import { useState } from "react";
 import type { Route } from "./+types/home";
 import {
   useLoaderData,
   Form,
   useNavigation,
-  Link,
   useActionData,
   useNavigate,
 } from "react-router";
@@ -16,12 +16,15 @@ import {
   type Session,
 } from "../db";
 import { TimetableShell } from "../components/TimetableShell";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Card } from "~/components/ui/card";
 import {
   animationVariants,
   springPresets,
   useReducedMotion,
 } from "../utils/animations";
-import React from "react";
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [
@@ -58,6 +61,7 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       const timetableId = String(fd.get("timetableId"));
       const courseTitle = String(fd.get("title") || "").trim();
       const location = String(fd.get("location") || "").trim();
+      const color = String(fd.get("color") || "#a5b4fc");
       const dayOfWeek = Number(fd.get("dayOfWeek"));
       const startMinutes = Number(fd.get("startMinutes"));
       const endMinutes = Number(fd.get("endMinutes"));
@@ -85,10 +89,12 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
           id: crypto.randomUUID(),
           timetableId,
           title: courseTitle,
-          // 为新课程设置默认颜色
-          color: "#3b82f6", // 默认蓝色
+          color: color,
         } as Course;
         await db.courses.add(course);
+      } else {
+        // 更新已存在课程的颜色
+        await db.courses.update(course.id, { color: color });
       }
       const session: Session = {
         id: crypto.randomUUID(),
@@ -170,28 +176,33 @@ export default function Home() {
         }))
   )!;
 
-  const [editingCell, setEditingCell] = React.useState<null | {
+  const [editingCell, setEditingCell] = useState<null | {
     day: number;
     segIndex: number;
   }>(null);
-  const [formDefaults, setFormDefaults] = React.useState<{
+  const [formDefaults, setFormDefaults] = useState<{
     title: string;
     location: string;
+    color: string;
     dayOfWeek: number;
     startMinutes: number;
     endMinutes: number;
   } | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>("#3b82f6");
 
   function openEdit(day: number, segIndex: number) {
     setEditingCell({ day, segIndex });
     const seg = segments[segIndex];
+    const defaultColor = "#a5b4fc"; // 默认柔和蓝色
     setFormDefaults({
       title: "",
       location: "",
+      color: defaultColor,
       dayOfWeek: day, // day 已经是正确的 dayOfWeek 值 (1-7)
       startMinutes: seg.startMinutes || segIndex * 60 + 480,
       endMinutes: seg.endMinutes || segIndex * 60 + 525,
     });
+    setSelectedColor(defaultColor);
   }
 
   const dayLabels = [
@@ -226,21 +237,8 @@ export default function Home() {
         initial="hidden"
         animate="visible"
         transition={springPresets.default}
-      >
-        <motion.div
-          whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
-          whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
-        >
-          <Link
-            className="btn btn-secondary"
-            to={`/t/${timetable.id}/edit-grid`}
-          >
-            网格设置
-          </Link>
-        </motion.div>
-      </motion.div>
+      ></motion.div>
       <motion.div
-        className="card"
         variants={
           prefersReducedMotion
             ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
@@ -250,89 +248,101 @@ export default function Home() {
         animate="visible"
         transition={{ ...springPresets.default, delay: 0.2 }}
       >
-        <div className="rounded-t-[14px] bg-[color:var(--surface-2)] py-3 text-center">
-          <div className="hero-subtitle">学校名称</div>
-          <div className="hero-title">{timetable.name}课表</div>
-        </div>
-        <div className="p-3">
-          <div className="overflow-x-auto">
-            <table className="table-clean w-full min-w-[720px] table-fixed border-separate border-spacing-0">
-              <thead>
-                <tr>
-                  <th className="sticky-col w-20 p-2 text-center align-middle">
-                    节次
-                  </th>
-                  {Array.from({ length: days }).map((_, i) => (
-                    <th key={i} className="p-2 text-center align-middle">
-                      {dayLabels[i]}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {segments.map((seg, segIndex) => (
-                  <tr key={segIndex}>
-                    <td className="sticky-col bg-[color:var(--surface)] p-2 text-center align-top">
-                      <div className="text-sm font-medium">
-                        {seg.label || segIndex + 1}
-                      </div>
-                      <div className="text-[11px] text-[color:var(--muted)]">
-                        {seg.startMinutes || seg.endMinutes
-                          ? `${fmt(seg.startMinutes)}–${fmt(seg.endMinutes)}`
-                          : ""}
-                      </div>
-                    </td>
-                    {Array.from({ length: days }).map((_, day) => {
-                      const dayOfWeek = (day + 1) % 7; // 转换为 0-6 (周日为0)
-                      const cellSessions = sessions.filter(
-                        s =>
-                          s.dayOfWeek === dayOfWeek &&
-                          // Session 与当前时间段有重叠即可显示
-                          s.startMinutes < seg.endMinutes &&
-                          s.endMinutes > seg.startMinutes
-                      );
-                      const courseById = new Map(
-                        courses.map(c => [c.id, c] as const)
-                      );
-                      return (
-                        <td key={day} className="align-top">
-                          <div className="min-h-16 p-2">
-                            {cellSessions.map(s => (
-                              <div
-                                key={s.id}
-                                className="session-card mb-2 p-2 text-sm"
-                              >
-                                <div className="font-medium">
-                                  {courseById.get(s.courseId)?.title ?? "课程"}
-                                </div>
-                                {s.location && (
-                                  <div className="text-xs text-[color:var(--muted)]">
-                                    {s.location}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                            <button
-                              onClick={() => openEdit(dayOfWeek, segIndex)}
-                              className="btn btn-secondary h-8 text-xs"
-                            >
-                              编辑
-                            </button>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <Card>
+          <div className="rounded-t-[14px] bg-[color:var(--surface-2)] py-3 text-center">
+            <div className="hero-subtitle">学校名称</div>
+            <div className="hero-title">{timetable.name}课表</div>
           </div>
-        </div>
+          <div className="p-3">
+            <div className="overflow-x-auto">
+              <table className="table-clean w-full min-w-[720px] table-fixed border-separate border-spacing-0">
+                <thead>
+                  <tr>
+                    <th className="sticky-col w-20 p-2 text-center align-middle">
+                      节次
+                    </th>
+                    {Array.from({ length: days }).map((_, i) => (
+                      <th key={i} className="p-2 text-center align-middle">
+                        {dayLabels[i]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {segments.map((seg, segIndex) => (
+                    <tr key={segIndex}>
+                      <td className="sticky-col bg-[color:var(--surface)] p-2 text-center align-top">
+                        <div className="text-sm font-medium">
+                          {seg.label || segIndex + 1}
+                        </div>
+                        <div className="text-[11px] text-[color:var(--muted)]">
+                          {seg.startMinutes || seg.endMinutes
+                            ? `${fmt(seg.startMinutes)}–${fmt(seg.endMinutes)}`
+                            : ""}
+                        </div>
+                      </td>
+                      {Array.from({ length: days }).map((_, day) => {
+                        const dayOfWeek = (day + 1) % 7; // 转换为 0-6 (周日为0)
+                        const cellSessions = sessions.filter(
+                          s =>
+                            s.dayOfWeek === dayOfWeek &&
+                            // Session 与当前时间段有重叠即可显示
+                            s.startMinutes < seg.endMinutes &&
+                            s.endMinutes > seg.startMinutes
+                        );
+                        const courseById = new Map(
+                          courses.map(c => [c.id, c] as const)
+                        );
+                        return (
+                          <td key={day} className="p-0 align-top">
+                            <div
+                              className="min-h-16 cursor-pointer rounded-sm p-2 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
+                              onClick={() => openEdit(dayOfWeek, segIndex)}
+                            >
+                              {cellSessions.map(s => (
+                                <div
+                                  key={s.id}
+                                  className="session-card mb-2 rounded-lg border border-white/30 p-2 text-sm shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+                                  style={{
+                                    backgroundColor:
+                                      courseById.get(s.courseId)?.color ||
+                                      "#a5b4fc",
+                                    backgroundImage: `linear-gradient(135deg, ${courseById.get(s.courseId)?.color || "#a5b4fc"}dd 0%, ${courseById.get(s.courseId)?.color || "#a5b4fc"}aa 100%)`,
+                                    color: "#374151",
+                                  }}
+                                >
+                                  <div className="font-medium">
+                                    {courseById.get(s.courseId)?.title ??
+                                      "课程"}
+                                  </div>
+                                  {s.location && (
+                                    <div className="text-xs opacity-75">
+                                      {s.location}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {cellSessions.length === 0 && (
+                                <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                                  点击添加课程
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Card>
       </motion.div>{" "}
       {/* Simple Modal for editing a cell */}
       {editingCell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-          <div className="card w-full max-w-md p-4">
+          <Card className="w-full max-w-md p-4">
             <div className="mb-3 text-lg font-medium">编辑课时</div>
             <Form
               method="post"
@@ -346,63 +356,87 @@ export default function Home() {
                 name="dayOfWeek"
                 value={formDefaults?.dayOfWeek ?? 1}
               />
+              <input
+                type="hidden"
+                name="startMinutes"
+                value={formDefaults?.startMinutes ?? 0}
+              />
+              <input
+                type="hidden"
+                name="endMinutes"
+                value={formDefaults?.endMinutes ?? 0}
+              />
               <div>
-                <label className="label">课程名</label>
-                <input
+                <Label>课程名</Label>
+                <Input
                   name="title"
                   defaultValue={formDefaults?.title ?? ""}
-                  className="input w-full"
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="label">开始(分)</label>
-                  <input
-                    name="startMinutes"
-                    type="number"
-                    min={0}
-                    max={1439}
-                    defaultValue={formDefaults?.startMinutes ?? 0}
-                    className="input w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">结束(分)</label>
-                  <input
-                    name="endMinutes"
-                    type="number"
-                    min={1}
-                    max={1440}
-                    defaultValue={formDefaults?.endMinutes ?? 0}
-                    className="input w-full"
-                    required
-                  />
-                </div>
-              </div>
               <div>
-                <label className="label">地点（可选）</label>
-                <input
+                <Label>地点（可选）</Label>
+                <Input
                   name="location"
                   defaultValue={formDefaults?.location ?? ""}
-                  className="input w-full"
                 />
               </div>
+              <div>
+                <Label>颜色</Label>
+                <div className="mt-2 flex gap-2">
+                  {[
+                    "#a5b4fc", // 柔和蓝色
+                    "#fca5a5", // 柔和红色
+                    "#86efac", // 柔和绿色
+                    "#fde047", // 柔和黄色
+                    "#c4b5fd", // 柔和紫色
+                    "#67e8f9", // 柔和青色
+                    "#fdba74", // 柔和橙色
+                    "#bef264", // 柔和石灰色
+                  ].map(color => (
+                    <label
+                      key={color}
+                      className="relative h-8 w-8 cursor-pointer rounded-full border-2 transition-all hover:scale-110 hover:border-gray-400"
+                      style={{
+                        backgroundColor: color,
+                        borderColor:
+                          color === selectedColor ? "#374151" : "transparent",
+                        boxShadow:
+                          color === selectedColor
+                            ? `0 0 0 2px ${color}, 0 0 0 4px #374151`
+                            : "none",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="color"
+                        value={color}
+                        checked={color === selectedColor}
+                        onChange={e => setSelectedColor(e.target.value)}
+                        className="sr-only"
+                      />
+                      {color === selectedColor && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                          <div className="h-2 w-2 rounded-full bg-gray-700"></div>
+                        </div>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setEditingCell(null)}
-                  className="btn btn-ghost text-sm"
+                  variant="ghost"
+                  size="sm"
                 >
                   取消
-                </button>
-                <button disabled={busy} className="btn btn-primary">
-                  保存
-                </button>
+                </Button>
+                <Button disabled={busy}>保存</Button>
               </div>
             </Form>
-          </div>
+          </Card>
         </div>
       )}
     </TimetableShell>
