@@ -7,6 +7,7 @@ import {
   useActionData,
   useNavigate,
 } from "react-router";
+import { motion } from "motion/react";
 import {
   db,
   type Timetable,
@@ -15,6 +16,11 @@ import {
   type Session,
 } from "../db";
 import { TimetableShell } from "../components/TimetableShell";
+import {
+  animationVariants,
+  springPresets,
+  useReducedMotion,
+} from "../utils/animations";
 import React from "react";
 
 export function meta(): ReturnType<Route.MetaFunction> {
@@ -206,14 +212,44 @@ export default function Home() {
     return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
   };
 
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <TimetableShell id={timetable.id} title={`${timetable.name}（主页面）`}>
-      <div className="mb-4 flex gap-2 text-sm">
-        <Link className="btn btn-secondary" to={`/t/${timetable.id}/edit-grid`}>
-          网格设置
-        </Link>
-      </div>
-      <div className="card">
+      <motion.div
+        className="mb-4 flex gap-2 text-sm"
+        variants={
+          prefersReducedMotion
+            ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+            : animationVariants.slideIn
+        }
+        initial="hidden"
+        animate="visible"
+        transition={springPresets.default}
+      >
+        <motion.div
+          whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+          whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+        >
+          <Link
+            className="btn btn-secondary"
+            to={`/t/${timetable.id}/edit-grid`}
+          >
+            网格设置
+          </Link>
+        </motion.div>
+      </motion.div>
+      <motion.div
+        className="card"
+        variants={
+          prefersReducedMotion
+            ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+            : { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }
+        }
+        initial="hidden"
+        animate="visible"
+        transition={{ ...springPresets.default, delay: 0.2 }}
+      >
         <div className="rounded-t-[14px] bg-[color:var(--surface-2)] py-3 text-center">
           <div className="hero-subtitle">学校名称</div>
           <div className="hero-title">{timetable.name}课表</div>
@@ -292,8 +328,7 @@ export default function Home() {
             </table>
           </div>
         </div>
-      </div>
-
+      </motion.div>{" "}
       {/* Simple Modal for editing a cell */}
       {editingCell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">

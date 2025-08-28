@@ -1,6 +1,12 @@
 import React from "react";
 import { Link, NavLink, Form, useNavigation } from "react-router";
+import { motion, AnimatePresence } from "motion/react";
 import DataManager from "./DataManager";
+import {
+  springPresets,
+  useReducedMotion,
+  useOriginAwareAnimation,
+} from "../utils/animations";
 
 export function TimetableShell(props: {
   id?: string;
@@ -12,8 +18,13 @@ export function TimetableShell(props: {
   const { id, title, children, actions, showCreateButton = false } = props;
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [showDataManager, setShowDataManager] = React.useState(false);
+  const dataManagerButtonRef = React.useRef<HTMLButtonElement>(null);
   const nav = useNavigation();
   const busy = nav.state === "submitting";
+  const prefersReducedMotion = useReducedMotion();
+  const dataManagerOrigin = useOriginAwareAnimation(
+    dataManagerButtonRef as React.RefObject<HTMLElement>
+  );
 
   return (
     <div className="flex min-h-[100svh] flex-col">
@@ -24,40 +35,65 @@ export function TimetableShell(props: {
           </Link>
           <div className="flex items-center gap-2">
             {showCreateButton && (
-              <button
+              <motion.button
                 onClick={() => setShowCreateModal(true)}
                 className="btn btn-primary text-sm"
+                whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ ...springPresets.default, delay: 0.1 }}
               >
                 创建课表
-              </button>
+              </motion.button>
             )}
             {id && (
               <>
                 <nav className="hidden items-center gap-1 text-sm sm:flex">
-                  <NavLink
-                    to={`/`}
-                    className={({ isActive }) =>
-                      isActive ? "nav-link active" : "nav-link"
-                    }
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...springPresets.default, delay: 0.2 }}
                   >
-                    主页面
-                  </NavLink>
-                  <NavLink
-                    to={`/t/${id}/edit-grid`}
-                    className={({ isActive }) =>
-                      isActive ? "nav-link active" : "nav-link"
-                    }
+                    <NavLink
+                      to={`/`}
+                      className={({ isActive }) =>
+                        isActive ? "nav-link active" : "nav-link"
+                      }
+                    >
+                      主页面
+                    </NavLink>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...springPresets.default, delay: 0.3 }}
                   >
-                    网格设置
-                  </NavLink>
+                    <NavLink
+                      to={`/t/${id}/edit-grid`}
+                      className={({ isActive }) =>
+                        isActive ? "nav-link active" : "nav-link"
+                      }
+                    >
+                      网格设置
+                    </NavLink>
+                  </motion.div>
                 </nav>
-                <button
+                <motion.button
+                  ref={dataManagerButtonRef}
                   onClick={() => setShowDataManager(true)}
                   className="btn btn-ghost text-sm"
                   title="数据管理"
+                  whileHover={
+                    prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }
+                  }
+                  whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ ...springPresets.snappy, delay: 0.4 }}
                 >
                   🛠️
-                </button>
+                </motion.button>
               </>
             )}
             {actions}
@@ -116,9 +152,17 @@ export function TimetableShell(props: {
       )}
 
       {/* Data Manager Modal */}
-      {showDataManager && (
-        <DataManager onClose={() => setShowDataManager(false)} />
-      )}
+      <AnimatePresence>
+        {showDataManager && (
+          <div
+            style={{
+              transformOrigin: `${dataManagerOrigin.x} ${dataManagerOrigin.y}`,
+            }}
+          >
+            <DataManager onClose={() => setShowDataManager(false)} />
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

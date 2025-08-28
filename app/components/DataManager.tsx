@@ -1,4 +1,5 @@
 import React from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   db,
   type Timetable,
@@ -11,6 +12,12 @@ import {
   DataIntegrityTools,
   ImportExportTools,
 } from "../utils/batchOperations";
+import {
+  animationVariants,
+  springPresets,
+  transitions,
+  useReducedMotion,
+} from "../utils/animations";
 
 type TabType = "backup" | "integrity" | "cleanup" | "deleted" | "batch";
 
@@ -30,6 +37,7 @@ interface DeletedRecords {
 }
 
 export default function DataManager({ onClose }: { onClose: () => void }) {
+  const prefersReducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = React.useState<
     "backup" | "integrity" | "cleanup" | "deleted" | "batch"
   >("backup");
@@ -382,26 +390,56 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     { id: "batch", label: "批量操作" },
   ];
 
+  const modalVariants = prefersReducedMotion
+    ? {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+        exit: { opacity: 0 },
+      }
+    : animationVariants.modal;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-      <div className="card max-h-[80vh] w-full max-w-4xl overflow-hidden">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={transitions.fast}
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <motion.div
+        className="card max-h-[80vh] w-full max-w-4xl overflow-hidden"
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        transition={springPresets.gentle}
+        style={{
+          transformOrigin: "center center",
+        }}
+      >
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
             <h2 className="text-lg font-medium">数据管理</h2>
-            <button
+            <motion.button
               onClick={onClose}
               className="btn btn-ghost text-sm"
               disabled={isLoading}
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+              whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+              transition={transitions.hover}
             >
               关闭
-            </button>
+            </motion.button>
           </div>
 
           {/* Tabs */}
           <div className="flex border-b border-[color:var(--border)]">
             {tabs.map(tab => (
-              <button
+              <motion.button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
@@ -409,392 +447,484 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     ? "border-[color:var(--primary)] text-[color:var(--primary)]"
                     : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--text)]"
                 }`}
+                whileHover={prefersReducedMotion ? {} : { y: -1 }}
+                whileTap={prefersReducedMotion ? {} : { y: 0 }}
+                transition={transitions.hover}
               >
                 {tab.label}
-              </button>
+              </motion.button>
             ))}
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-auto p-4">
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-[color:var(--muted)]">加载中...</div>
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {isLoading && (
+                <motion.div
+                  className="flex items-center justify-center py-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={transitions.fast}
+                >
+                  <div className="text-[color:var(--muted)]">加载中...</div>
+                </motion.div>
+              )}
 
-            {/* 备份管理 */}
-            {activeTab === "backup" && !isLoading && (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <button onClick={createBackup} className="btn btn-primary">
-                    创建备份
-                  </button>
-                  <label className="btn btn-secondary cursor-pointer">
-                    导入备份
+              {/* 备份管理 */}
+              {activeTab === "backup" && !isLoading && (
+                <motion.div
+                  key="backup"
+                  className="space-y-4"
+                  variants={
+                    prefersReducedMotion
+                      ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                      : animationVariants.tabContent
+                  }
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={springPresets.default}
+                >
+                  <div className="flex gap-2">
+                    <motion.button
+                      onClick={createBackup}
+                      className="btn btn-primary"
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                      transition={transitions.hover}
+                    >
+                      创建备份
+                    </motion.button>
+                    <motion.label
+                      className="btn btn-secondary cursor-pointer"
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                      transition={transitions.hover}
+                    >
+                      导入备份
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importBackup}
+                        className="hidden"
+                      />
+                    </motion.label>
+                  </div>
+
+                  <div className="space-y-2">
+                    {backups.length === 0 ? (
+                      <div className="py-8 text-center text-[color:var(--muted)]">
+                        暂无备份
+                      </div>
+                    ) : (
+                      backups.map(backup => (
+                        <div
+                          key={backup.id}
+                          className="surface flex items-center justify-between rounded-lg p-3"
+                        >
+                          <div>
+                            <div className="font-medium">{backup.name}</div>
+                            <div className="text-sm text-[color:var(--muted)]">
+                              {new Date(
+                                backup.createdAt || ""
+                              ).toLocaleString()}{" "}
+                              • {backup.recordCount} 条记录 •{" "}
+                              {Math.round(backup.size / 1024)}KB
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                exportBackup(backup.id, backup.name)
+                              }
+                              className="btn btn-ghost text-sm"
+                            >
+                              导出
+                            </button>
+                            <button
+                              onClick={() => restoreBackup(backup.id)}
+                              className="btn btn-secondary text-sm"
+                            >
+                              恢复
+                            </button>
+                            <button
+                              onClick={() =>
+                                db.deleteBackup(backup.id).then(loadBackups)
+                              }
+                              className="btn btn-ghost text-sm text-red-600"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 完整性检查 */}
+              {activeTab === "integrity" && !isLoading && integrityResult && (
+                <motion.div
+                  key="integrity"
+                  className="space-y-4"
+                  variants={
+                    prefersReducedMotion
+                      ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                      : animationVariants.tabContent
+                  }
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={springPresets.default}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`font-medium ${integrityResult.isValid ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {integrityResult.isValid
+                        ? "✅ 数据完整性良好"
+                        : "⚠️ 发现数据完整性问题"}
+                    </div>
+                    <button
+                      onClick={checkIntegrity}
+                      className="btn btn-secondary text-sm"
+                    >
+                      重新检查
+                    </button>
+                  </div>
+
+                  {integrityResult.issues.length > 0 && (
+                    <div className="surface rounded-lg p-3">
+                      <div className="mb-2 font-medium">发现的问题:</div>
+                      <ul className="space-y-1 text-sm">
+                        {integrityResult.issues.map(
+                          (issue: string, index: number) => (
+                            <li key={index} className="text-red-600">
+                              • {issue}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                  {integrityResult.orphanedRecords.courses.length > 0 && (
+                    <div className="surface rounded-lg p-3">
+                      <div className="mb-2 font-medium">
+                        孤立课程 (
+                        {integrityResult.orphanedRecords.courses.length}
+                        ):
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {integrityResult.orphanedRecords.courses.map(
+                          (course: Course) => (
+                            <div key={course.id}>
+                              • {course.title} (ID: {course.id})
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {integrityResult.orphanedRecords.sessions.length > 0 && (
+                    <div className="surface rounded-lg p-3">
+                      <div className="mb-2 font-medium">
+                        孤立课时 (
+                        {integrityResult.orphanedRecords.sessions.length}):
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {integrityResult.orphanedRecords.sessions.map(
+                          (session: Session) => (
+                            <div key={session.id}>• Session {session.id}</div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* 数据清理 */}
+              {activeTab === "cleanup" && !isLoading && (
+                <motion.div
+                  key="cleanup"
+                  className="space-y-4"
+                  variants={
+                    prefersReducedMotion
+                      ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                      : animationVariants.tabContent
+                  }
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={springPresets.default}
+                >
+                  <div className="surface rounded-lg p-4">
+                    <div className="mb-2 font-medium">清理孤立记录</div>
+                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                      清理引用不存在课表或课程的记录。这些记录将被软删除，可在回收站中恢复。
+                    </p>
+                    <button
+                      onClick={cleanupOrphaned}
+                      className="btn btn-warning"
+                    >
+                      开始清理
+                    </button>
+                  </div>
+
+                  <div className="surface rounded-lg p-4">
+                    <div className="mb-2 font-medium">数据完整性检查</div>
+                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                      检查数据库中的数据完整性问题，包括孤立记录和引用错误。
+                    </p>
+                    <button
+                      onClick={checkIntegrity}
+                      className="btn btn-secondary"
+                    >
+                      运行检查
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 回收站 */}
+              {activeTab === "deleted" && !isLoading && (
+                <motion.div
+                  key="deleted"
+                  className="space-y-4"
+                  variants={
+                    prefersReducedMotion
+                      ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                      : animationVariants.tabContent
+                  }
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={springPresets.default}
+                >
+                  {Object.entries(deletedRecords).map(
+                    ([type, records]: [
+                      string,
+                      (Timetable | Course | Session)[],
+                    ]) =>
+                      records.length > 0 && (
+                        <div key={type} className="surface rounded-lg p-3">
+                          <div className="mb-2 font-medium">
+                            已删除的
+                            {type === "timetables"
+                              ? "课表"
+                              : type === "courses"
+                                ? "课程"
+                                : "课时"}{" "}
+                            ({records.length})
+                          </div>
+                          <div className="space-y-2">
+                            {records.map(record => (
+                              <div
+                                key={record.id}
+                                className="flex items-center justify-between border-b border-[color:var(--border)] py-2 last:border-b-0"
+                              >
+                                <div>
+                                  <div className="font-medium">
+                                    {(record as Timetable).name ||
+                                      (record as Course).title ||
+                                      `${type.slice(0, -1)} ${record.id.slice(0, 8)}`}
+                                  </div>
+                                  <div className="text-sm text-[color:var(--muted)]">
+                                    删除时间:{" "}
+                                    {record.deletedAt
+                                      ? new Date(
+                                          record.deletedAt
+                                        ).toLocaleString()
+                                      : "未知"}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      restoreRecord(
+                                        type === "timetables"
+                                          ? "timetable"
+                                          : type === "courses"
+                                            ? "course"
+                                            : "session",
+                                        record.id
+                                      )
+                                    }
+                                    className="btn btn-secondary text-sm"
+                                  >
+                                    恢复
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      permanentDelete(
+                                        type === "timetables"
+                                          ? "timetable"
+                                          : type === "courses"
+                                            ? "course"
+                                            : "session",
+                                        record.id
+                                      )
+                                    }
+                                    className="btn btn-ghost text-sm text-red-600"
+                                  >
+                                    永久删除
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                  )}
+
+                  {deletedRecords.timetables.length === 0 &&
+                    deletedRecords.courses.length === 0 &&
+                    deletedRecords.sessions.length === 0 && (
+                      <div className="py-8 text-center text-[color:var(--muted)]">
+                        回收站为空
+                      </div>
+                    )}
+                </motion.div>
+              )}
+
+              {/* 批量操作 */}
+              {activeTab === "batch" && (
+                <motion.div
+                  key="batch"
+                  className="space-y-4"
+                  variants={
+                    prefersReducedMotion
+                      ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                      : animationVariants.tabContent
+                  }
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={springPresets.default}
+                >
+                  {/* 课表选择 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      选择课表:
+                    </label>
+                    <select
+                      value={selectedTimetableId}
+                      onChange={e => setSelectedTimetableId(e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="">请选择课表</option>
+                      {availableTimetables.map(timetable => (
+                        <option key={timetable.id} value={timetable.id}>
+                          {timetable.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 批量操作按钮 */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">课表管理</h3>
+                      <button
+                        onClick={handleDuplicateTimetable}
+                        disabled={isLoading || !selectedTimetableId}
+                        className="btn btn-primary w-full"
+                      >
+                        {isLoading ? "处理中..." : "复制课表"}
+                      </button>
+                      <button
+                        onClick={handleExportCSV}
+                        disabled={isLoading || !selectedTimetableId}
+                        className="btn btn-secondary w-full"
+                      >
+                        {isLoading ? "导出中..." : "导出CSV"}
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">数据优化</h3>
+                      <button
+                        onClick={handleMergeDuplicateCourses}
+                        disabled={isLoading || !selectedTimetableId}
+                        className="btn btn-primary w-full"
+                      >
+                        {isLoading ? "处理中..." : "合并重复课程"}
+                      </button>
+                      <button
+                        onClick={handleFixTimeConflicts}
+                        disabled={isLoading || !selectedTimetableId}
+                        className="btn btn-primary w-full"
+                      >
+                        {isLoading ? "处理中..." : "修复时间冲突"}
+                      </button>
+                      <button
+                        onClick={handleStandardizeTime}
+                        disabled={isLoading || !selectedTimetableId}
+                        className="btn btn-primary w-full"
+                      >
+                        {isLoading ? "处理中..." : "标准化时间"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 操作结果 */}
+                  {batchResult && (
+                    <div className="surface rounded-lg p-4">
+                      <h3 className="mb-2 font-medium">操作结果:</h3>
+                      <div className="text-sm text-[color:var(--muted)]">
+                        {batchResult}
+                      </div>
+                      <button
+                        onClick={() => setBatchResult("")}
+                        className="btn btn-ghost mt-2 text-sm"
+                      >
+                        清除
+                      </button>
+                    </div>
+                  )}
+
+                  {/* CSV导入 */}
+                  <div className="surface rounded-lg p-4">
+                    <h3 className="mb-2 font-medium">CSV导入</h3>
+                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                      支持导入格式：课程名称,教师,地点,星期,开始时间,结束时间,备注
+                    </p>
                     <input
                       type="file"
-                      accept=".json"
-                      onChange={importBackup}
-                      className="hidden"
+                      accept=".csv"
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file || !selectedTimetableId) return;
+
+                        setIsLoading(true);
+                        try {
+                          const content = await file.text();
+                          const result = await ImportExportTools.importFromCSV(
+                            selectedTimetableId,
+                            content
+                          );
+                          setBatchResult(
+                            `导入完成！成功导入 ${result.imported} 条记录。${result.errors.length > 0 ? `错误: ${result.errors.join(", ")}` : ""}`
+                          );
+                        } catch (error) {
+                          setBatchResult(`导入失败: ${error}`);
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      className="input w-full"
                     />
-                  </label>
-                </div>
-
-                <div className="space-y-2">
-                  {backups.length === 0 ? (
-                    <div className="py-8 text-center text-[color:var(--muted)]">
-                      暂无备份
-                    </div>
-                  ) : (
-                    backups.map(backup => (
-                      <div
-                        key={backup.id}
-                        className="surface flex items-center justify-between rounded-lg p-3"
-                      >
-                        <div>
-                          <div className="font-medium">{backup.name}</div>
-                          <div className="text-sm text-[color:var(--muted)]">
-                            {new Date(backup.createdAt || "").toLocaleString()}{" "}
-                            • {backup.recordCount} 条记录 •{" "}
-                            {Math.round(backup.size / 1024)}KB
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => exportBackup(backup.id, backup.name)}
-                            className="btn btn-ghost text-sm"
-                          >
-                            导出
-                          </button>
-                          <button
-                            onClick={() => restoreBackup(backup.id)}
-                            className="btn btn-secondary text-sm"
-                          >
-                            恢复
-                          </button>
-                          <button
-                            onClick={() =>
-                              db.deleteBackup(backup.id).then(loadBackups)
-                            }
-                            className="btn btn-ghost text-sm text-red-600"
-                          >
-                            删除
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 完整性检查 */}
-            {activeTab === "integrity" && !isLoading && integrityResult && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div
-                    className={`font-medium ${integrityResult.isValid ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {integrityResult.isValid
-                      ? "✅ 数据完整性良好"
-                      : "⚠️ 发现数据完整性问题"}
                   </div>
-                  <button
-                    onClick={checkIntegrity}
-                    className="btn btn-secondary text-sm"
-                  >
-                    重新检查
-                  </button>
-                </div>
-
-                {integrityResult.issues.length > 0 && (
-                  <div className="surface rounded-lg p-3">
-                    <div className="mb-2 font-medium">发现的问题:</div>
-                    <ul className="space-y-1 text-sm">
-                      {integrityResult.issues.map(
-                        (issue: string, index: number) => (
-                          <li key={index} className="text-red-600">
-                            • {issue}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                )}
-
-                {integrityResult.orphanedRecords.courses.length > 0 && (
-                  <div className="surface rounded-lg p-3">
-                    <div className="mb-2 font-medium">
-                      孤立课程 ({integrityResult.orphanedRecords.courses.length}
-                      ):
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      {integrityResult.orphanedRecords.courses.map(
-                        (course: Course) => (
-                          <div key={course.id}>
-                            • {course.title} (ID: {course.id})
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {integrityResult.orphanedRecords.sessions.length > 0 && (
-                  <div className="surface rounded-lg p-3">
-                    <div className="mb-2 font-medium">
-                      孤立课时 (
-                      {integrityResult.orphanedRecords.sessions.length}):
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      {integrityResult.orphanedRecords.sessions.map(
-                        (session: Session) => (
-                          <div key={session.id}>• Session {session.id}</div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 数据清理 */}
-            {activeTab === "cleanup" && !isLoading && (
-              <div className="space-y-4">
-                <div className="surface rounded-lg p-4">
-                  <div className="mb-2 font-medium">清理孤立记录</div>
-                  <p className="mb-3 text-sm text-[color:var(--muted)]">
-                    清理引用不存在课表或课程的记录。这些记录将被软删除，可在回收站中恢复。
-                  </p>
-                  <button onClick={cleanupOrphaned} className="btn btn-warning">
-                    开始清理
-                  </button>
-                </div>
-
-                <div className="surface rounded-lg p-4">
-                  <div className="mb-2 font-medium">数据完整性检查</div>
-                  <p className="mb-3 text-sm text-[color:var(--muted)]">
-                    检查数据库中的数据完整性问题，包括孤立记录和引用错误。
-                  </p>
-                  <button
-                    onClick={checkIntegrity}
-                    className="btn btn-secondary"
-                  >
-                    运行检查
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 回收站 */}
-            {activeTab === "deleted" && !isLoading && (
-              <div className="space-y-4">
-                {Object.entries(deletedRecords).map(
-                  ([type, records]: [
-                    string,
-                    (Timetable | Course | Session)[],
-                  ]) =>
-                    records.length > 0 && (
-                      <div key={type} className="surface rounded-lg p-3">
-                        <div className="mb-2 font-medium">
-                          已删除的
-                          {type === "timetables"
-                            ? "课表"
-                            : type === "courses"
-                              ? "课程"
-                              : "课时"}{" "}
-                          ({records.length})
-                        </div>
-                        <div className="space-y-2">
-                          {records.map(record => (
-                            <div
-                              key={record.id}
-                              className="flex items-center justify-between border-b border-[color:var(--border)] py-2 last:border-b-0"
-                            >
-                              <div>
-                                <div className="font-medium">
-                                  {(record as Timetable).name ||
-                                    (record as Course).title ||
-                                    `${type.slice(0, -1)} ${record.id.slice(0, 8)}`}
-                                </div>
-                                <div className="text-sm text-[color:var(--muted)]">
-                                  删除时间:{" "}
-                                  {record.deletedAt
-                                    ? new Date(
-                                        record.deletedAt
-                                      ).toLocaleString()
-                                    : "未知"}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    restoreRecord(
-                                      type === "timetables"
-                                        ? "timetable"
-                                        : type === "courses"
-                                          ? "course"
-                                          : "session",
-                                      record.id
-                                    )
-                                  }
-                                  className="btn btn-secondary text-sm"
-                                >
-                                  恢复
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    permanentDelete(
-                                      type === "timetables"
-                                        ? "timetable"
-                                        : type === "courses"
-                                          ? "course"
-                                          : "session",
-                                      record.id
-                                    )
-                                  }
-                                  className="btn btn-ghost text-sm text-red-600"
-                                >
-                                  永久删除
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                )}
-
-                {deletedRecords.timetables.length === 0 &&
-                  deletedRecords.courses.length === 0 &&
-                  deletedRecords.sessions.length === 0 && (
-                    <div className="py-8 text-center text-[color:var(--muted)]">
-                      回收站为空
-                    </div>
-                  )}
-              </div>
-            )}
-
-            {/* 批量操作 */}
-            {activeTab === "batch" && (
-              <div className="space-y-4">
-                {/* 课表选择 */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">选择课表:</label>
-                  <select
-                    value={selectedTimetableId}
-                    onChange={e => setSelectedTimetableId(e.target.value)}
-                    className="input w-full"
-                  >
-                    <option value="">请选择课表</option>
-                    {availableTimetables.map(timetable => (
-                      <option key={timetable.id} value={timetable.id}>
-                        {timetable.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 批量操作按钮 */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium">课表管理</h3>
-                    <button
-                      onClick={handleDuplicateTimetable}
-                      disabled={isLoading || !selectedTimetableId}
-                      className="btn btn-primary w-full"
-                    >
-                      {isLoading ? "处理中..." : "复制课表"}
-                    </button>
-                    <button
-                      onClick={handleExportCSV}
-                      disabled={isLoading || !selectedTimetableId}
-                      className="btn btn-secondary w-full"
-                    >
-                      {isLoading ? "导出中..." : "导出CSV"}
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium">数据优化</h3>
-                    <button
-                      onClick={handleMergeDuplicateCourses}
-                      disabled={isLoading || !selectedTimetableId}
-                      className="btn btn-primary w-full"
-                    >
-                      {isLoading ? "处理中..." : "合并重复课程"}
-                    </button>
-                    <button
-                      onClick={handleFixTimeConflicts}
-                      disabled={isLoading || !selectedTimetableId}
-                      className="btn btn-primary w-full"
-                    >
-                      {isLoading ? "处理中..." : "修复时间冲突"}
-                    </button>
-                    <button
-                      onClick={handleStandardizeTime}
-                      disabled={isLoading || !selectedTimetableId}
-                      className="btn btn-primary w-full"
-                    >
-                      {isLoading ? "处理中..." : "标准化时间"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* 操作结果 */}
-                {batchResult && (
-                  <div className="surface rounded-lg p-4">
-                    <h3 className="mb-2 font-medium">操作结果:</h3>
-                    <div className="text-sm text-[color:var(--muted)]">
-                      {batchResult}
-                    </div>
-                    <button
-                      onClick={() => setBatchResult("")}
-                      className="btn btn-ghost mt-2 text-sm"
-                    >
-                      清除
-                    </button>
-                  </div>
-                )}
-
-                {/* CSV导入 */}
-                <div className="surface rounded-lg p-4">
-                  <h3 className="mb-2 font-medium">CSV导入</h3>
-                  <p className="mb-3 text-sm text-[color:var(--muted)]">
-                    支持导入格式：课程名称,教师,地点,星期,开始时间,结束时间,备注
-                  </p>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={async e => {
-                      const file = e.target.files?.[0];
-                      if (!file || !selectedTimetableId) return;
-
-                      setIsLoading(true);
-                      try {
-                        const content = await file.text();
-                        const result = await ImportExportTools.importFromCSV(
-                          selectedTimetableId,
-                          content
-                        );
-                        setBatchResult(
-                          `导入完成！成功导入 ${result.imported} 条记录。${result.errors.length > 0 ? `错误: ${result.errors.join(", ")}` : ""}`
-                        );
-                      } catch (error) {
-                        setBatchResult(`导入失败: ${error}`);
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    className="input w-full"
-                  />
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

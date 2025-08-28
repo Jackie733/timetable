@@ -6,6 +6,25 @@
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+/* Animation Easing Functions from animations.mdc */
+:root {
+  /* Ease-out (best for user-initiated interactions) */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1);
+
+  /* Ease-in-out (for elements moving within screen) */
+  --ease-in-out-quad: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-in-out-quint: cubic-bezier(0.86, 0, 0.07, 1);
+  --ease-in-out-expo: cubic-bezier(1, 0, 0, 1);
+  --ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+
 html,
 :root {
   --bg: #fafafa;
@@ -52,6 +71,60 @@ body {
   }
 }
 
+/* Animation Support - Following animations.mdc guidelines */
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable transform animations specifically */
+  * {
+    transform: none !important;
+  }
+}
+
+/* Hover transitions only on devices with fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  .btn {
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      border-color 200ms ease,
+      opacity 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms var(--ease-out-quad);
+  }
+
+  .nav-link {
+    transition:
+      color 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .card {
+    transition:
+      box-shadow 200ms var(--ease-out-quad),
+      transform 200ms var(--ease-out-quad);
+  }
+}
+
+/* Hardware acceleration for transform animations */
+.motion-element {
+  will-change: transform, opacity;
+}
+
+/* Performance optimization for motion elements */
+.motion-element:not(.motion-active) {
+  will-change: auto;
+}
+
 /* UI Primitives */
 .surface {
   background: var(--surface);
@@ -78,11 +151,7 @@ body {
   border-radius: 10px;
   border: 1px solid transparent;
   font-weight: 500;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    color 0.15s ease;
+  /* Transitions moved to @media (hover: hover) section above for better performance */
 }
 .btn:focus-visible {
   outline: none;

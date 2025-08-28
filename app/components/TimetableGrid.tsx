@@ -1,5 +1,11 @@
 import React from "react";
+import { motion } from "motion/react";
 import type { Course, Session, Timetable } from "../db";
+import {
+  animationVariants,
+  springPresets,
+  useReducedMotion,
+} from "../utils/animations";
 
 export interface TimetableGridProps {
   timetable: Timetable;
@@ -18,6 +24,7 @@ export function TimetableGrid({
   startHour = 8,
   endHour = 20,
 }: TimetableGridProps) {
+  const prefersReducedMotion = useReducedMotion();
   const hours = Array.from(
     { length: endHour - startHour + 1 },
     (_, i) => startHour + i
@@ -74,14 +81,23 @@ export function TimetableGrid({
             const height = ((end - start) / totalMinutes) * 100;
             const course = courseById.get(s.courseId);
             return (
-              <div
+              <motion.div
                 key={s.id}
                 className="pointer-events-none col-start-[2] col-end-[9]"
                 style={{
                   gridRow: `2 / -1`,
                 }}
+                variants={
+                  prefersReducedMotion
+                    ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+                    : animationVariants.listItem
+                }
+                initial="hidden"
+                animate="visible"
+                custom={col}
+                transition={springPresets.default}
               >
-                <div
+                <motion.div
                   className="absolute left-0"
                   style={{
                     insetInlineStart: `calc(80px + ${col} * (100% - 80px) / 7)`,
@@ -89,8 +105,17 @@ export function TimetableGrid({
                     top: `calc(32px + ${top}% * (1))`,
                     height: `calc(${height}% * (1))`,
                   }}
+                  whileHover={
+                    prefersReducedMotion
+                      ? {}
+                      : {
+                          scale: 1.02,
+                          y: -2,
+                          transition: { duration: 0.2 },
+                        }
+                  }
                 >
-                  <div className="pointer-events-auto h-full rounded border bg-blue-50 p-1 text-xs dark:bg-blue-950/30">
+                  <div className="pointer-events-auto h-full rounded border bg-blue-50 p-1 text-xs transition-shadow hover:shadow-md dark:bg-blue-950/30">
                     <div className="truncate font-medium">
                       {course?.title ?? "课程"}
                     </div>
@@ -100,8 +125,8 @@ export function TimetableGrid({
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             );
           });
         })}
