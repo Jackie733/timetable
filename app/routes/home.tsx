@@ -6,8 +6,9 @@ import {
   useNavigation,
   useActionData,
   useNavigate,
+  useSubmit,
 } from "react-router";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   db,
   type Timetable,
@@ -25,6 +26,16 @@ import {
   springPresets,
   useReducedMotion,
 } from "../utils/animations";
+
+const MotionCard = motion.create(Card);
+
+interface ConfirmDialog {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [
@@ -65,6 +76,7 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       const dayOfWeek = Number(fd.get("dayOfWeek"));
       const startMinutes = Number(fd.get("startMinutes"));
       const endMinutes = Number(fd.get("endMinutes"));
+      const existingSessionId = String(fd.get("existingSessionId") || "");
 
       // 验证输入数据
       if (
@@ -80,6 +92,12 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       ) {
         return { ok: false } as const;
       }
+
+      // 如果是编辑现有课程，先删除旧的 session
+      if (existingSessionId) {
+        await db.sessions.delete(existingSessionId);
+      }
+
       let course = await db
         .getActive(db.courses)
         .filter(c => c.timetableId === timetableId && c.title === courseTitle)
@@ -106,6 +124,14 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
         location: location || undefined,
       };
       await db.sessions.add(session);
+      return { ok: true } as const;
+    }
+    if (intent === "delete-session") {
+      const sessionId = String(fd.get("sessionId"));
+      if (!sessionId) {
+        return { ok: false } as const;
+      }
+      await db.sessions.delete(sessionId);
       return { ok: true } as const;
     }
     const name = (fd.get("name") as string) || "未命名课表";
@@ -138,6 +164,7 @@ export default function Home() {
   const busy = nav.state === "submitting";
   const actionData = useActionData<typeof clientAction>();
   const navigate = useNavigate();
+  const submit = useSubmit();
 
   if (actionData?.ok && actionData.id && nav.state === "idle") {
     // After creating a timetable, take user to edit page
@@ -179,6 +206,8 @@ export default function Home() {
   const [editingCell, setEditingCell] = useState<null | {
     day: number;
     segIndex: number;
+    session?: Session;
+    course?: Course;
   }>(null);
   const [formDefaults, setFormDefaults] = useState<{
     title: string;
@@ -189,20 +218,50 @@ export default function Home() {
     endMinutes: number;
   } | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("#3b82f6");
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
 
-  function openEdit(day: number, segIndex: number) {
-    setEditingCell({ day, segIndex });
+  const showConfirm = (title: string, message: string): Promise<boolean> => {
+    return new Promise(resolve => {
+      setConfirmDialog({
+        isOpen: true,
+        title,
+        message,
+        onConfirm: () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(false);
+        },
+      });
+    });
+  };
+
+  function openEdit(
+    day: number,
+    segIndex: number,
+    session?: Session,
+    course?: Course
+  ) {
+    setEditingCell({ day, segIndex, session, course });
     const seg = segments[segIndex];
     const defaultColor = "#a5b4fc"; // 默认柔和蓝色
     setFormDefaults({
-      title: "",
-      location: "",
-      color: defaultColor,
+      title: course?.title || "",
+      location: session?.location || "",
+      color: course?.color || defaultColor,
       dayOfWeek: day, // day 已经是正确的 dayOfWeek 值 (1-7)
       startMinutes: seg.startMinutes || segIndex * 60 + 480,
       endMinutes: seg.endMinutes || segIndex * 60 + 525,
     });
-    setSelectedColor(defaultColor);
+    setSelectedColor(course?.color || defaultColor);
   }
 
   const dayLabels = [
@@ -297,17 +356,21 @@ export default function Home() {
                           <td key={day} className="p-0 align-top">
                             <div
                               className="min-h-16 cursor-pointer rounded-sm p-2 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
-                              onClick={() => openEdit(dayOfWeek, segIndex)}
+                              onClick={() => {
+                                const session = cellSessions[0]; // 取第一个session作为编辑对象
+                                const course = session
+                                  ? courseById.get(session.courseId)
+                                  : undefined;
+                                openEdit(dayOfWeek, segIndex, session, course);
+                              }}
                             >
                               {cellSessions.map(s => (
                                 <div
                                   key={s.id}
-                                  className="session-card mb-2 rounded-lg border border-white/30 p-2 text-sm shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+                                  className="session-card mb-2 rounded-lg border border-white/40 p-2 text-sm shadow-sm backdrop-blur-sm transition-all hover:scale-[1.02] hover:shadow-md"
                                   style={{
-                                    backgroundColor:
-                                      courseById.get(s.courseId)?.color ||
-                                      "#a5b4fc",
-                                    backgroundImage: `linear-gradient(135deg, ${courseById.get(s.courseId)?.color || "#a5b4fc"}dd 0%, ${courseById.get(s.courseId)?.color || "#a5b4fc"}aa 100%)`,
+                                    backgroundColor: `${courseById.get(s.courseId)?.color || "#a5b4fc"}80`,
+                                    backgroundImage: `linear-gradient(135deg, ${courseById.get(s.courseId)?.color || "#a5b4fc"}90 0%, ${courseById.get(s.courseId)?.color || "#a5b4fc"}60 100%)`,
                                     color: "#374151",
                                   }}
                                 >
@@ -322,11 +385,6 @@ export default function Home() {
                                   )}
                                 </div>
                               ))}
-                              {cellSessions.length === 0 && (
-                                <div className="flex h-full items-center justify-center text-xs text-gray-400">
-                                  点击添加课程
-                                </div>
-                              )}
                             </div>
                           </td>
                         );
@@ -343,7 +401,9 @@ export default function Home() {
       {editingCell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
           <Card className="w-full max-w-md p-4">
-            <div className="mb-3 text-lg font-medium">编辑课时</div>
+            <div className="mb-3 text-lg font-medium">
+              {editingCell.session ? "编辑课时" : "添加课时"}
+            </div>
             <Form
               method="post"
               onSubmit={() => setEditingCell(null)}
@@ -366,6 +426,13 @@ export default function Home() {
                 name="endMinutes"
                 value={formDefaults?.endMinutes ?? 0}
               />
+              {editingCell.session && (
+                <input
+                  type="hidden"
+                  name="existingSessionId"
+                  value={editingCell.session.id}
+                />
+              )}
               <div>
                 <Label>课程名</Label>
                 <Input
@@ -375,7 +442,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Label>地点（可选）</Label>
+                <Label>地点</Label>
                 <Input
                   name="location"
                   defaultValue={formDefaults?.location ?? ""}
@@ -385,14 +452,14 @@ export default function Home() {
                 <Label>颜色</Label>
                 <div className="mt-2 flex gap-2">
                   {[
-                    "#a5b4fc", // 柔和蓝色
-                    "#fca5a5", // 柔和红色
-                    "#86efac", // 柔和绿色
-                    "#fde047", // 柔和黄色
-                    "#c4b5fd", // 柔和紫色
-                    "#67e8f9", // 柔和青色
-                    "#fdba74", // 柔和橙色
-                    "#bef264", // 柔和石灰色
+                    "#a5b4fc",
+                    "#fca5a5",
+                    "#86efac",
+                    "#fde047",
+                    "#c4b5fd",
+                    "#67e8f9",
+                    "#fdba74",
+                    "#bef264",
                   ].map(color => (
                     <label
                       key={color}
@@ -424,21 +491,82 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  onClick={() => setEditingCell(null)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  取消
-                </Button>
-                <Button disabled={busy}>保存</Button>
+              <div className="flex justify-between">
+                <div>
+                  {editingCell.session && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        const confirmed = await showConfirm(
+                          "删除课时",
+                          "确定要删除这个课时吗？"
+                        );
+                        if (confirmed) {
+                          // 使用React Router的submit方法
+                          const formData = new FormData();
+                          formData.set("intent", "delete-session");
+                          formData.set("sessionId", editingCell.session!.id);
+
+                          submit(formData, { method: "post" });
+                          setEditingCell(null);
+                        }
+                      }}
+                    >
+                      删除
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setEditingCell(null)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    取消
+                  </Button>
+                  <Button disabled={busy}>
+                    {editingCell.session ? "更新" : "保存"}
+                  </Button>
+                </div>
               </div>
             </Form>
           </Card>
         </div>
       )}
+      {/* 确认对话框 */}
+      <AnimatePresence>
+        {confirmDialog.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={confirmDialog.onCancel}
+            />
+            <MotionCard
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative z-10 mx-4 max-w-md bg-white p-6 shadow-lg"
+            >
+              <h3 className="mb-2 text-lg font-semibold">
+                {confirmDialog.title}
+              </h3>
+              <p className="mb-6 text-gray-600">{confirmDialog.message}</p>
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" onClick={confirmDialog.onCancel}>
+                  取消
+                </Button>
+                <Button variant="destructive" onClick={confirmDialog.onConfirm}>
+                  确定
+                </Button>
+              </div>
+            </MotionCard>
+          </div>
+        )}
+      </AnimatePresence>
     </TimetableShell>
   );
 }

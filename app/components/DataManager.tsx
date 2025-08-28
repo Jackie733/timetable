@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import {
   db,
   type Timetable,
@@ -18,6 +19,13 @@ import {
   transitions,
   useReducedMotion,
 } from "../utils/animations";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Card } from "~/components/ui/card";
+
+const MotionButton = motion.create(Button);
+const MotionCard = motion.create(Card);
 
 type TabType = "backup" | "integrity" | "cleanup" | "deleted" | "batch";
 
@@ -34,6 +42,25 @@ interface DeletedRecords {
   timetables: Timetable[];
   courses: Course[];
   sessions: Session[];
+}
+
+interface ConfirmDialog {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  confirmVariant?: "default" | "destructive";
+}
+
+interface InputDialog {
+  isOpen: boolean;
+  title: string;
+  placeholder: string;
+  defaultValue?: string;
+  onConfirm: (value: string) => void;
+  onCancel: () => void;
 }
 
 export default function DataManager({ onClose }: { onClose: () => void }) {
@@ -56,6 +83,62 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     []
   );
   const [batchResult, setBatchResult] = useState<string>("");
+
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const [inputDialog, setInputDialog] = useState<InputDialog>({
+    isOpen: false,
+    title: "",
+    placeholder: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmText = "确定",
+    confirmVariant: "default" | "destructive" = "default"
+  ) => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmDialog(prev => ({ ...prev, isOpen: false })),
+      confirmText,
+      confirmVariant,
+    });
+  };
+
+  const showInputDialog = (
+    title: string,
+    placeholder: string,
+    onConfirm: (value: string) => void,
+    defaultValue = ""
+  ) => {
+    setInputDialog({
+      isOpen: true,
+      title,
+      placeholder,
+      defaultValue,
+      onConfirm: (value: string) => {
+        onConfirm(value);
+        setInputDialog(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setInputDialog(prev => ({ ...prev, isOpen: false })),
+    });
+  };
 
   const loadBackups = useCallback(async () => {
     try {
@@ -107,39 +190,49 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
   }, []);
 
   const createBackup = async () => {
-    const name = prompt("请输入备份名称:");
-    if (!name) return;
+    showInputDialog("创建备份", "请输入备份名称", async (name: string) => {
+      if (!name.trim()) return;
 
-    setIsLoading(true);
-    try {
-      const backupId = await db.createBackup(name);
-      alert(`备份创建成功！ID: ${backupId}`);
-      await loadBackups();
-    } catch (error) {
-      alert(`备份创建失败: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(true);
+      try {
+        const backupId = await db.createBackup(name);
+        toast.success(`备份创建成功！ID: ${backupId}`);
+        await loadBackups();
+      } catch (error) {
+        toast.error(`备份创建失败: ${error}`);
+      } finally {
+        setIsLoading(false);
+      }
+    });
   };
 
   const restoreBackup = async (backupId: string) => {
-    const confirmRestore = confirm("确定要恢复此备份吗？这将覆盖当前数据。");
-    if (!confirmRestore) return;
-
-    setIsLoading(true);
-    try {
-      const result = await db.restoreBackup(backupId, { clearExisting: true });
-      if (result.success) {
-        alert(`备份恢复成功！恢复了 ${result.restoredRecords} 条记录。`);
-        window.location.reload(); // 刷新页面以反映数据变化
-      } else {
-        alert(`备份恢复失败: ${result.error}`);
-      }
-    } catch (error) {
-      alert(`备份恢复失败: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
+    showConfirm(
+      "恢复备份",
+      "确定要恢复此备份吗？这将覆盖当前数据。",
+      async () => {
+        setIsLoading(true);
+        try {
+          const result = await db.restoreBackup(backupId, {
+            clearExisting: true,
+          });
+          if (result.success) {
+            toast.success(
+              `备份恢复成功！恢复了 ${result.restoredRecords} 条记录。`
+            );
+            window.location.reload(); // 刷新页面以反映数据变化
+          } else {
+            toast.error(`备份恢复失败: ${result.error}`);
+          }
+        } catch (error) {
+          toast.error(`备份恢复失败: ${error}`);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      "恢复",
+      "destructive"
+    );
   };
 
   const exportBackup = async (backupId: string, backupName: string) => {
@@ -153,8 +246,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      toast.success("备份导出成功！");
     } catch (error) {
-      alert(`导出失败: ${error}`);
+      toast.error(`导出失败: ${error}`);
     }
   };
 
@@ -165,10 +259,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     setIsLoading(true);
     try {
       const backupId = await db.importBackup(file);
-      alert(`备份导入成功！ID: ${backupId}`);
+      toast.success(`备份导入成功！ID: ${backupId}`);
       await loadBackups();
     } catch (error) {
-      alert(`导入失败: ${error}`);
+      toast.error(`导入失败: ${error}`);
     } finally {
       setIsLoading(false);
       event.target.value = "";
@@ -176,23 +270,26 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
   };
 
   const cleanupOrphaned = async () => {
-    const confirmCleanup = confirm(
-      "确定要清理孤立记录吗？这些记录将被软删除。"
+    showConfirm(
+      "清理孤立记录",
+      "确定要清理孤立记录吗？这些记录将被软删除。",
+      async () => {
+        setIsLoading(true);
+        try {
+          const result = await db.cleanupOrphanedRecords();
+          toast.success(
+            `清理完成！清理了 ${result.cleanedCourses} 个课程和 ${result.cleanedSessions} 个课时。`
+          );
+          await checkIntegrity();
+        } catch (error) {
+          toast.error(`清理失败: ${error}`);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      "清理",
+      "destructive"
     );
-    if (!confirmCleanup) return;
-
-    setIsLoading(true);
-    try {
-      const result = await db.cleanupOrphanedRecords();
-      alert(
-        `清理完成！清理了 ${result.cleanedCourses} 个课程和 ${result.cleanedSessions} 个课时。`
-      );
-      await checkIntegrity();
-    } catch (error) {
-      alert(`清理失败: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const restoreRecord = async (
@@ -211,10 +308,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
           await db.restoreSession(id);
           break;
       }
-      alert("记录恢复成功！");
+      toast.success("记录恢复成功！");
       await loadDeletedRecords();
     } catch (error) {
-      alert(`恢复失败: ${error}`);
+      toast.error(`恢复失败: ${error}`);
     }
   };
 
@@ -222,55 +319,63 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     type: "timetable" | "course" | "session",
     id: string
   ) => {
-    const confirmDelete = confirm("确定要永久删除此记录吗？此操作不可撤销！");
-    if (!confirmDelete) return;
-
-    try {
-      switch (type) {
-        case "timetable":
-          await db.timetables.delete(id);
-          break;
-        case "course":
-          await db.courses.delete(id);
-          break;
-        case "session":
-          await db.sessions.delete(id);
-          break;
-      }
-      alert("记录已永久删除！");
-      await loadDeletedRecords();
-    } catch (error) {
-      alert(`删除失败: ${error}`);
-    }
+    showConfirm(
+      "永久删除",
+      "确定要永久删除此记录吗？此操作不可撤销！",
+      async () => {
+        try {
+          switch (type) {
+            case "timetable":
+              await db.timetables.delete(id);
+              break;
+            case "course":
+              await db.courses.delete(id);
+              break;
+            case "session":
+              await db.sessions.delete(id);
+              break;
+          }
+          toast.success("记录已永久删除！");
+          await loadDeletedRecords();
+        } catch (error) {
+          toast.error(`删除失败: ${error}`);
+        }
+      },
+      "永久删除",
+      "destructive"
+    );
   };
 
   const handleDuplicateTimetable = async () => {
     if (!selectedTimetableId) {
-      alert("请选择要复制的课表");
+      toast.error("请选择要复制的课表");
       return;
     }
 
-    const newName = prompt("请输入新课表名称:");
-    if (!newName) return;
+    showInputDialog("复制课表", "请输入新课表名称", async (newName: string) => {
+      if (!newName.trim()) return;
 
-    setIsLoading(true);
-    try {
-      const newTimetableId = await BatchOperations.duplicateTimetable(
-        selectedTimetableId,
-        newName
-      );
-      setBatchResult(`课表复制成功！新课表ID: ${newTimetableId}`);
-      await loadTimetables();
-    } catch (error) {
-      setBatchResult(`复制失败: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(true);
+      try {
+        const newTimetableId = await BatchOperations.duplicateTimetable(
+          selectedTimetableId,
+          newName
+        );
+        setBatchResult(`课表复制成功！新课表ID: ${newTimetableId}`);
+        await loadTimetables();
+        toast.success("课表复制成功！");
+      } catch (error) {
+        setBatchResult(`复制失败: ${error}`);
+        toast.error(`复制失败: ${error}`);
+      } finally {
+        setIsLoading(false);
+      }
+    });
   };
 
   const handleMergeDuplicateCourses = async () => {
     if (!selectedTimetableId) {
-      alert("请选择要处理的课表");
+      toast.error("请选择要处理的课表");
       return;
     }
 
@@ -278,11 +383,12 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     try {
       const result =
         await BatchOperations.mergeDuplicateCourses(selectedTimetableId);
-      setBatchResult(
-        `合并完成！处理了 ${result.mergedCount} 个重复课程，删除了 ${result.removedCourseIds.length} 个重复记录`
-      );
+      const message = `合并完成！处理了 ${result.mergedCount} 个重复课程，删除了 ${result.removedCourseIds.length} 个重复记录`;
+      setBatchResult(message);
+      toast.success("重复课程合并成功！");
     } catch (error) {
       setBatchResult(`合并失败: ${error}`);
+      toast.error(`合并失败: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -290,7 +396,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
   const handleFixTimeConflicts = async () => {
     if (!selectedTimetableId) {
-      alert("请选择要处理的课表");
+      toast.error("请选择要处理的课表");
       return;
     }
 
@@ -298,11 +404,12 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     try {
       const result =
         await DataIntegrityTools.fixTimeConflicts(selectedTimetableId);
-      setBatchResult(
-        `时间冲突修复完成！发现 ${result.conflictsFound} 个冲突，修复了 ${result.conflictsFixed} 个`
-      );
+      const message = `时间冲突修复完成！发现 ${result.conflictsFound} 个冲突，修复了 ${result.conflictsFixed} 个`;
+      setBatchResult(message);
+      toast.success("时间冲突修复成功！");
     } catch (error) {
       setBatchResult(`修复失败: ${error}`);
+      toast.error(`修复失败: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -310,7 +417,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
   const handleStandardizeTime = async () => {
     if (!selectedTimetableId) {
-      alert("请选择要处理的课表");
+      toast.error("请选择要处理的课表");
       return;
     }
 
@@ -318,8 +425,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     try {
       await DataIntegrityTools.standardizeTimeFormats(selectedTimetableId);
       setBatchResult("时间格式标准化完成！所有时间已调整为15分钟的倍数");
+      toast.success("时间格式标准化成功！");
     } catch (error) {
       setBatchResult(`标准化失败: ${error}`);
+      toast.error(`标准化失败: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -327,7 +436,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
   const handleExportCSV = async () => {
     if (!selectedTimetableId) {
-      alert("请选择要导出的课表");
+      toast.error("请选择要导出的课表");
       return;
     }
 
@@ -342,8 +451,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
       link.click();
       URL.revokeObjectURL(url);
       setBatchResult("CSV导出成功！");
+      toast.success("CSV导出成功！");
     } catch (error) {
       setBatchResult(`导出失败: ${error}`);
+      toast.error(`导出失败: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -408,16 +519,16 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
             <h2 className="text-lg font-medium">数据管理</h2>
-            <motion.button
+            <MotionButton
               onClick={onClose}
-              className="btn btn-ghost text-sm"
+              variant="ghost"
               disabled={isLoading}
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
               transition={transitions.hover}
             >
               关闭
-            </motion.button>
+            </MotionButton>
           </div>
 
           <div className="flex border-b border-[color:var(--border)]">
@@ -468,29 +579,31 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   transition={springPresets.default}
                 >
                   <div className="flex gap-2">
-                    <motion.button
+                    <MotionButton
                       onClick={createBackup}
-                      className="btn btn-primary"
                       whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                       whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
                       transition={transitions.hover}
                     >
                       创建备份
-                    </motion.button>
-                    <motion.label
-                      className="btn btn-secondary cursor-pointer"
+                    </MotionButton>
+                    <MotionButton
+                      variant="secondary"
+                      asChild
                       whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                       whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
                       transition={transitions.hover}
                     >
-                      导入备份
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={importBackup}
-                        className="hidden"
-                      />
-                    </motion.label>
+                      <label className="cursor-pointer">
+                        导入备份
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={importBackup}
+                          className="hidden"
+                        />
+                      </label>
+                    </MotionButton>
                   </div>
 
                   <div className="space-y-2">
@@ -515,28 +628,32 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() =>
                                 exportBackup(backup.id, backup.name)
                               }
-                              className="btn btn-ghost text-sm"
                             >
                               导出
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => restoreBackup(backup.id)}
-                              className="btn btn-secondary text-sm"
                             >
                               恢复
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() =>
                                 db.deleteBackup(backup.id).then(loadBackups)
                               }
-                              className="btn btn-ghost text-sm text-red-600"
+                              className="text-red-600 hover:text-red-700"
                             >
                               删除
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ))
@@ -567,12 +684,13 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         ? "✅ 数据完整性良好"
                         : "⚠️ 发现数据完整性问题"}
                     </div>
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={checkIntegrity}
-                      className="btn btn-secondary text-sm"
                     >
                       重新检查
-                    </button>
+                    </Button>
                   </div>
 
                   {integrityResult.issues.length > 0 && (
@@ -646,12 +764,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     <p className="mb-3 text-sm text-[color:var(--muted)]">
                       清理引用不存在课表或课程的记录。这些记录将被软删除，可在回收站中恢复。
                     </p>
-                    <button
-                      onClick={cleanupOrphaned}
-                      className="btn btn-warning"
-                    >
+                    <Button variant="destructive" onClick={cleanupOrphaned}>
                       开始清理
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="surface rounded-lg p-4">
@@ -659,12 +774,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     <p className="mb-3 text-sm text-[color:var(--muted)]">
                       检查数据库中的数据完整性问题，包括孤立记录和引用错误。
                     </p>
-                    <button
-                      onClick={checkIntegrity}
-                      className="btn btn-secondary"
-                    >
+                    <Button variant="secondary" onClick={checkIntegrity}>
                       运行检查
-                    </button>
+                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -721,7 +833,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                                   </div>
                                 </div>
                                 <div className="flex gap-2">
-                                  <button
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
                                     onClick={() =>
                                       restoreRecord(
                                         type === "timetables"
@@ -732,11 +846,12 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                                         record.id
                                       )
                                     }
-                                    className="btn btn-secondary text-sm"
                                   >
                                     恢复
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() =>
                                       permanentDelete(
                                         type === "timetables"
@@ -747,10 +862,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                                         record.id
                                       )
                                     }
-                                    className="btn btn-ghost text-sm text-red-600"
+                                    className="text-red-600 hover:text-red-700"
                                   >
                                     永久删除
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             ))}
@@ -784,13 +899,12 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   transition={springPresets.default}
                 >
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                      选择课表:
-                    </label>
+                    <Label htmlFor="timetable-select">选择课表:</Label>
                     <select
+                      id="timetable-select"
                       value={selectedTimetableId}
                       onChange={e => setSelectedTimetableId(e.target.value)}
-                      className="input w-full"
+                      className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="">请选择课表</option>
                       {availableTimetables.map(timetable => (
@@ -804,69 +918,72 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium">课表管理</h3>
-                      <button
+                      <Button
                         onClick={handleDuplicateTimetable}
                         disabled={isLoading || !selectedTimetableId}
-                        className="btn btn-primary w-full"
+                        className="w-full"
                       >
                         {isLoading ? "处理中..." : "复制课表"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="secondary"
                         onClick={handleExportCSV}
                         disabled={isLoading || !selectedTimetableId}
-                        className="btn btn-secondary w-full"
+                        className="w-full"
                       >
                         {isLoading ? "导出中..." : "导出CSV"}
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium">数据优化</h3>
-                      <button
+                      <Button
                         onClick={handleMergeDuplicateCourses}
                         disabled={isLoading || !selectedTimetableId}
-                        className="btn btn-primary w-full"
+                        className="w-full"
                       >
                         {isLoading ? "处理中..." : "合并重复课程"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={handleFixTimeConflicts}
                         disabled={isLoading || !selectedTimetableId}
-                        className="btn btn-primary w-full"
+                        className="w-full"
                       >
                         {isLoading ? "处理中..." : "修复时间冲突"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={handleStandardizeTime}
                         disabled={isLoading || !selectedTimetableId}
-                        className="btn btn-primary w-full"
+                        className="w-full"
                       >
                         {isLoading ? "处理中..." : "标准化时间"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
                   {batchResult && (
-                    <div className="surface rounded-lg p-4">
+                    <Card className="p-4">
                       <h3 className="mb-2 font-medium">操作结果:</h3>
                       <div className="text-sm text-[color:var(--muted)]">
                         {batchResult}
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setBatchResult("")}
-                        className="btn btn-ghost mt-2 text-sm"
+                        className="mt-2"
                       >
                         清除
-                      </button>
-                    </div>
+                      </Button>
+                    </Card>
                   )}
 
-                  <div className="surface rounded-lg p-4">
+                  <Card className="p-4">
                     <h3 className="mb-2 font-medium">CSV导入</h3>
                     <p className="mb-3 text-sm text-[color:var(--muted)]">
                       支持导入格式：课程名称,教师,地点,星期,开始时间,结束时间,备注
                     </p>
-                    <input
+                    <Input
                       type="file"
                       accept=".csv"
                       onChange={async e => {
@@ -880,24 +997,125 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                             selectedTimetableId,
                             content
                           );
-                          setBatchResult(
-                            `导入完成！成功导入 ${result.imported} 条记录。${result.errors.length > 0 ? `错误: ${result.errors.join(", ")}` : ""}`
-                          );
+                          const message = `导入完成！成功导入 ${result.imported} 条记录。${result.errors.length > 0 ? `错误: ${result.errors.join(", ")}` : ""}`;
+                          setBatchResult(message);
+                          toast.success("CSV 导入成功！");
                         } catch (error) {
                           setBatchResult(`导入失败: ${error}`);
+                          toast.error(`导入失败: ${error}`);
                         } finally {
                           setIsLoading(false);
                         }
                       }}
-                      className="input w-full"
                     />
-                  </div>
+                  </Card>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </motion.div>
+
+      {/* 确认对话框 */}
+      <AnimatePresence>
+        {confirmDialog.isOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={e => {
+              if (e.target === e.currentTarget) confirmDialog.onCancel();
+            }}
+          >
+            <MotionCard
+              className="w-full max-w-md p-4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={springPresets.default}
+            >
+              <div className="mb-4">
+                <h3 className="text-lg font-medium">{confirmDialog.title}</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  {confirmDialog.message}
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={confirmDialog.onCancel}>
+                  取消
+                </Button>
+                <Button
+                  variant={confirmDialog.confirmVariant || "default"}
+                  onClick={confirmDialog.onConfirm}
+                >
+                  {confirmDialog.confirmText || "确定"}
+                </Button>
+              </div>
+            </MotionCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 输入对话框 */}
+      <AnimatePresence>
+        {inputDialog.isOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={e => {
+              if (e.target === e.currentTarget) inputDialog.onCancel();
+            }}
+          >
+            <MotionCard
+              className="w-full max-w-md p-4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={springPresets.default}
+            >
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const value = formData.get("inputValue") as string;
+                  if (value.trim()) {
+                    inputDialog.onConfirm(value.trim());
+                  }
+                }}
+              >
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium">{inputDialog.title}</h3>
+                  <div className="mt-3">
+                    <Label htmlFor="inputValue">请输入内容</Label>
+                    <Input
+                      id="inputValue"
+                      name="inputValue"
+                      placeholder={inputDialog.placeholder}
+                      defaultValue={inputDialog.defaultValue}
+                      className="mt-1"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={inputDialog.onCancel}
+                  >
+                    取消
+                  </Button>
+                  <Button type="submit">确定</Button>
+                </div>
+              </form>
+            </MotionCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
