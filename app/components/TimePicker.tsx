@@ -52,6 +52,17 @@ export function TimePicker({
 
   const [timeValue, setTimeValue] = React.useState(initialTime);
 
+  // 检测移动端
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // 处理时间变化
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
@@ -61,13 +72,18 @@ export function TimePicker({
   return (
     <div className={className}>
       {label && (
-        <Label className={cn(compact ? "py-1 text-xs" : "")}>{label}</Label>
+        <Label className={cn(compact ? "py-1 text-xs" : "", isMobile ? "text-sm" : "")}>
+          {label}
+        </Label>
       )}
       <Input
         type="time"
         value={timeValue}
         onChange={handleTimeChange}
-        className={cn(compact ? "h-8" : "")}
+        className={cn(
+          compact && !isMobile ? "h-8" : "",
+          isMobile ? "h-10 text-base" : ""
+        )}
         required={required}
         min={min}
         max={max}

@@ -100,6 +100,17 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     onCancel: () => {},
   });
 
+  // 检测移动端
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const showConfirm = (
     title: string,
     message: string,
@@ -506,7 +517,11 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
       }}
     >
       <motion.div
-        className="card max-h-[80vh] w-full max-w-4xl overflow-hidden"
+        className={`card overflow-hidden ${
+          isMobile 
+            ? "modal-mobile max-h-[90vh] w-full" 
+            : "max-h-[80vh] w-full max-w-4xl"
+        }`}
         variants={modalVariants}
         initial="hidden"
         animate="visible"
@@ -518,11 +533,12 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
-            <h2 className="text-lg font-medium">数据管理</h2>
+            <h2 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>数据管理</h2>
             <MotionButton
               onClick={onClose}
               variant="ghost"
               disabled={isLoading}
+              size={isMobile ? "sm" : "default"}
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
               transition={transitions.hover}
@@ -531,26 +547,28 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             </MotionButton>
           </div>
 
-          <div className="flex border-b border-[color:var(--border)]">
-            {tabs.map(tab => (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "border-[color:var(--primary)] text-[color:var(--primary)]"
-                    : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--text)]"
-                }`}
-                whileHover={prefersReducedMotion ? {} : { y: -1 }}
-                whileTap={prefersReducedMotion ? {} : { y: 0 }}
-                transition={transitions.hover}
-              >
-                {tab.label}
-              </motion.button>
-            ))}
+          <div className={`border-b border-[color:var(--border)] ${isMobile ? "overflow-x-auto" : "flex"}`}>
+            <div className={`${isMobile ? "flex min-w-max" : "flex w-full"}`}>
+              {tabs.map(tab => (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "border-[color:var(--primary)] text-[color:var(--primary)]"
+                      : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--text)]"
+                  }`}
+                  whileHover={prefersReducedMotion ? {} : { y: -1 }}
+                  whileTap={prefersReducedMotion ? {} : { y: 0 }}
+                  transition={transitions.hover}
+                >
+                  {tab.label}
+                </motion.button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-4 mobile-scroll">
             <AnimatePresence mode="wait">
               {isLoading && (
                 <motion.div
@@ -904,7 +922,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                       id="timetable-select"
                       value={selectedTimetableId}
                       onChange={e => setSelectedTimetableId(e.target.value)}
-                      className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                      className={`border-input placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isMobile ? "h-10 text-base" : "h-9"
+                      }`}
                     >
                       <option value="">请选择课表</option>
                       {availableTimetables.map(timetable => (
@@ -915,13 +935,14 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className={`gap-4 ${isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2"}`}>
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium">课表管理</h3>
                       <Button
                         onClick={handleDuplicateTimetable}
                         disabled={isLoading || !selectedTimetableId}
                         className="w-full"
+                        size={isMobile ? "default" : "default"}
                       >
                         {isLoading ? "处理中..." : "复制课表"}
                       </Button>
@@ -930,6 +951,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         onClick={handleExportCSV}
                         disabled={isLoading || !selectedTimetableId}
                         className="w-full"
+                        size={isMobile ? "default" : "default"}
                       >
                         {isLoading ? "导出中..." : "导出CSV"}
                       </Button>
@@ -941,6 +963,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         onClick={handleMergeDuplicateCourses}
                         disabled={isLoading || !selectedTimetableId}
                         className="w-full"
+                        size={isMobile ? "default" : "default"}
                       >
                         {isLoading ? "处理中..." : "合并重复课程"}
                       </Button>
@@ -948,6 +971,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         onClick={handleFixTimeConflicts}
                         disabled={isLoading || !selectedTimetableId}
                         className="w-full"
+                        size={isMobile ? "default" : "default"}
                       >
                         {isLoading ? "处理中..." : "修复时间冲突"}
                       </Button>
@@ -955,6 +979,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         onClick={handleStandardizeTime}
                         disabled={isLoading || !selectedTimetableId}
                         className="w-full"
+                        size={isMobile ? "default" : "default"}
                       >
                         {isLoading ? "处理中..." : "标准化时间"}
                       </Button>
@@ -980,12 +1005,13 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
                   <Card className="p-4">
                     <h3 className="mb-2 font-medium">CSV导入</h3>
-                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                    <p className={`mb-3 text-[color:var(--muted)] ${isMobile ? "text-sm" : "text-sm"}`}>
                       支持导入格式：课程名称,教师,地点,星期,开始时间,结束时间,备注
                     </p>
                     <Input
                       type="file"
                       accept=".csv"
+                      className={isMobile ? "text-base" : ""}
                       onChange={async e => {
                         const file = e.target.files?.[0];
                         if (!file || !selectedTimetableId) return;
@@ -1029,25 +1055,32 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             }}
           >
             <MotionCard
-              className="w-full max-w-md p-4"
+              className={`w-full p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={springPresets.default}
             >
               <div className="mb-4">
-                <h3 className="text-lg font-medium">{confirmDialog.title}</h3>
-                <p className="mt-2 text-sm text-gray-600">
+                <h3 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+                  {confirmDialog.title}
+                </h3>
+                <p className={`mt-2 text-gray-600 ${isMobile ? "text-sm" : "text-sm"}`}>
                   {confirmDialog.message}
                 </p>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={confirmDialog.onCancel}>
+              <div className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}>
+                <Button 
+                  variant="ghost" 
+                  onClick={confirmDialog.onCancel}
+                  className={isMobile ? "w-full" : ""}
+                >
                   取消
                 </Button>
                 <Button
                   variant={confirmDialog.confirmVariant || "default"}
                   onClick={confirmDialog.onConfirm}
+                  className={isMobile ? "w-full" : ""}
                 >
                   {confirmDialog.confirmText || "确定"}
                 </Button>
@@ -1070,7 +1103,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             }}
           >
             <MotionCard
-              className="w-full max-w-md p-4"
+              className={`w-full p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -1087,7 +1120,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 }}
               >
                 <div className="mb-4">
-                  <h3 className="text-lg font-medium">{inputDialog.title}</h3>
+                  <h3 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+                    {inputDialog.title}
+                  </h3>
                   <div className="mt-3">
                     <Label htmlFor="inputValue">请输入内容</Label>
                     <Input
@@ -1095,21 +1130,27 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                       name="inputValue"
                       placeholder={inputDialog.placeholder}
                       defaultValue={inputDialog.defaultValue}
-                      className="mt-1"
+                      className={`mt-1 ${isMobile ? "text-base" : ""}`}
                       autoFocus
                       required
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}>
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={inputDialog.onCancel}
+                    className={isMobile ? "w-full" : ""}
                   >
                     取消
                   </Button>
-                  <Button type="submit">确定</Button>
+                  <Button 
+                    type="submit"
+                    className={isMobile ? "w-full" : ""}
+                  >
+                    确定
+                  </Button>
                 </div>
               </form>
             </MotionCard>
