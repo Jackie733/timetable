@@ -9,13 +9,14 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import type { Timetable, Course, Session } from "../../db";
+import type { Timetable, Course, Session } from "~/db";
 import { TimetableHeader } from "./TimetableHeader";
 import { TimetableSegmentRow } from "./TimetableSegmentRow";
 import { TimetableCell } from "./TimetableCell";
 import { CourseBlock } from "./CourseBlock";
-import { useDragDrop } from "../../hooks/useDragDrop";
-import type { DragSession } from "../../utils/dragDropUtils";
+import { useDragDrop } from "~/hooks/useDragDrop";
+import type { DragSession } from "~/utils/dragDropUtils";
+import { TimeUtils } from "~/utils";
 
 export interface TimetableViewProps {
   timetable: Timetable;
@@ -39,21 +40,20 @@ export function TimetableView({
   onSessionMove,
   isMobile = false,
 }: TimetableViewProps) {
+  const standardSchedule = TimeUtils.generateStandardSchoolSchedule();
   const days = timetable.days ?? 5;
   const segments = (
     timetable.segments?.length
       ? timetable.segments
-      : Array.from({ length: 6 }).map((_, i) => ({
-          label: String(i + 1),
-          startMinutes: i * 60 + 480, // 8:00 开始，每节课1小时
-          endMinutes: (i + 1) * 60 + 480, // 9:00, 10:00, ...
+      : standardSchedule.map(item => ({
+          label: item.label,
+          startMinutes: item.startMinutes,
+          endMinutes: item.endMinutes,
         }))
   )!;
 
-  // 创建课程查找映射
   const courseById = new Map(courses.map(c => [c.id, c] as const));
 
-  // 拖拽功能
   const {
     activeSession,
     dragOverlay,
@@ -67,11 +67,10 @@ export function TimetableView({
     onSessionMove,
   });
 
-  // 设置拖拽传感器
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px 的移动距离才开始拖拽，避免与点击冲突
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -87,7 +86,6 @@ export function TimetableView({
     );
   }, [segments.length]);
 
-  // 获取指定单元格的课时
   const getCellSessions = (dayOfWeek: number, segIndex: number): Session[] => {
     const seg = segments[segIndex];
     return sessions.filter(
@@ -107,13 +105,13 @@ export function TimetableView({
       onDragEnd={handleDragEnd}
     >
       <div
-        className={`print:h-full ${
+        className={`h-full print:h-full ${
           isMobile ? "mobile-scroll-container overflow-x-auto pb-2" : ""
         }`}
       >
-        <div className={`print:h-full ${isMobile ? "min-w-fit" : ""}`}>
+        <div className={`h-full print:h-full ${isMobile ? "min-w-fit" : ""}`}>
           <table
-            className={`timetable-grid w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 print:h-full ${
+            className={`timetable-grid h-full w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 print:h-full ${
               isMobile
                 ? "table-ultra-compact text-xs"
                 : "min-w-[720px] table-fixed"
@@ -122,7 +120,7 @@ export function TimetableView({
               isMobile
                 ? {
                     minWidth: "100%",
-                    width: "max-content", // 让表格可以水平滚动
+                    width: "max-content",
                   }
                 : {}
             }
