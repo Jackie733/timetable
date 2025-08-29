@@ -81,7 +81,10 @@ export default function EditGrid() {
         animate={{ opacity: 1, y: 0 }}
         transition={springPresets.default}
       >
-        <Form method="post" className={`grid gap-4 ${isMobile ? "" : "md:grid-cols-[1fr_280px]"}`}>
+        <Form
+          method="post"
+          className={`grid gap-4 ${isMobile ? "" : "md:grid-cols-[1fr_280px]"}`}
+        >
           <motion.div
             initial={
               prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -20 }
@@ -90,10 +93,14 @@ export default function EditGrid() {
             transition={{ ...springPresets.default, delay: 0.1 }}
           >
             <Card className="p-3">
-              <p className={`mb-2 text-[color:var(--muted)] ${isMobile ? "text-sm" : "text-sm"}`}>
+              <p
+                className={`text-muted-foreground mb-2 ${isMobile ? "text-sm" : "text-sm"}`}
+              >
                 设置课程表显示的天数与每日节次时间段。
               </p>
-              <div className={`mb-3 gap-3 ${isMobile ? "grid grid-cols-1 space-y-3" : "grid grid-cols-2"}`}>
+              <div
+                className={`mb-3 gap-3 ${isMobile ? "grid grid-cols-1 space-y-3" : "grid grid-cols-2"}`}
+              >
                 <div>
                   <Label className="py-1">显示天数（5/7）</Label>
                   <Input
@@ -123,9 +130,9 @@ export default function EditGrid() {
                   return (
                     <motion.div
                       key={i}
-                      className={`gap-2 rounded border border-[color:var(--border)] p-2 ${
-                        isMobile 
-                          ? "grid grid-cols-1 space-y-2" 
+                      className={`border-border gap-2 rounded border p-2 ${
+                        isMobile
+                          ? "grid grid-cols-1 space-y-2"
                           : "grid grid-cols-[70px_1fr_1fr] items-end"
                       }`}
                       initial={
@@ -140,7 +147,9 @@ export default function EditGrid() {
                       }}
                     >
                       <div>
-                        <Label className={`py-1 ${isMobile ? "text-sm" : "text-xs"}`}>
+                        <Label
+                          className={`py-1 ${isMobile ? "text-sm" : "text-xs"}`}
+                        >
                           第{i + 1}节
                         </Label>
                         <Input
@@ -150,7 +159,11 @@ export default function EditGrid() {
                           placeholder={`${i + 1}`}
                         />
                       </div>
-                      <div className={isMobile ? "grid grid-cols-2 gap-2" : "contents"}>
+                      <div
+                        className={
+                          isMobile ? "grid grid-cols-2 gap-2" : "contents"
+                        }
+                      >
                         <TimePicker
                           name={`seg_${i}_start`}
                           defaultValue={seg?.startMinutes ?? i * 50 + 480} // 默认从8:00开始，每节课50分钟间隔
@@ -182,7 +195,12 @@ export default function EditGrid() {
             transition={{ ...springPresets.default, delay: 0.3 }}
           >
             <Card className="p-3">
-              <Button disabled={busy} size={isMobile ? "default" : "sm"} className="w-full" asChild>
+              <Button
+                disabled={busy}
+                size={isMobile ? "default" : "sm"}
+                className="w-full"
+                asChild
+              >
                 <motion.button
                   whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                   whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
@@ -191,11 +209,13 @@ export default function EditGrid() {
                 </motion.button>
               </Button>
 
-              <div className="mt-3 space-y-1 text-sm text-[color:var(--muted)]">
-                <h3 className="text-sm font-medium text-[color:var(--text)]">
+              <div className="text-muted-foreground mt-3 space-y-1 text-sm">
+                <h3 className="text-foreground text-sm font-medium">
                   使用说明
                 </h3>
-                <ul className={`space-y-0.5 leading-relaxed ${isMobile ? "text-sm" : "text-xs"}`}>
+                <ul
+                  className={`space-y-0.5 leading-relaxed ${isMobile ? "text-sm" : "text-xs"}`}
+                >
                   <li>• 选择显示天数（5天/7天）</li>
                   <li>• 设置每日节次数量</li>
                   <li>• 用时间选择器设置时间段</li>

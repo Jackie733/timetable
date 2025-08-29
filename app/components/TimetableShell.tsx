@@ -62,12 +62,14 @@ export function TimetableShell(props: {
 
   return (
     <div className="flex min-h-[100svh] flex-col">
-      <header className={`sticky top-0 z-10 border-b bg-[color:var(--surface)/0.95] backdrop-blur ${isMobile ? "header-landscape" : ""}`}>
+      <header
+        className={`bg-background/95 sticky top-0 z-10 border-b backdrop-blur ${isMobile ? "header-landscape" : ""}`}
+      >
         <div className="container mx-auto flex items-center justify-between px-2 py-2 sm:px-4 sm:py-3">
           {/* Logo/Title */}
           <div className="flex items-center gap-2">
             <Link to="/" className="hero-title font-semibold tracking-tight">
-              Timetable 
+              Timetable
               {!isMobile && <span className="hero-subtitle ml-2">课程表</span>}
             </Link>
           </div>
@@ -79,9 +81,7 @@ export function TimetableShell(props: {
                 initial={hasAnimated ? false : { opacity: 0, y: -10 }}
                 animate={hasAnimated ? false : { opacity: 1, y: 0 }}
                 transition={
-                  hasAnimated
-                    ? {}
-                    : { ...springPresets.default, delay: 0.2 }
+                  hasAnimated ? {} : { ...springPresets.default, delay: 0.2 }
                 }
               >
                 <NavLink
@@ -97,9 +97,7 @@ export function TimetableShell(props: {
                 initial={hasAnimated ? false : { opacity: 0, y: -10 }}
                 animate={hasAnimated ? false : { opacity: 1, y: 0 }}
                 transition={
-                  hasAnimated
-                    ? {}
-                    : { ...springPresets.default, delay: 0.3 }
+                  hasAnimated ? {} : { ...springPresets.default, delay: 0.3 }
                 }
               >
                 <NavLink
@@ -135,7 +133,7 @@ export function TimetableShell(props: {
                 </motion.button>
               </Button>
             )}
-            
+
             {id && (
               <>
                 {/* Mobile menu button */}
@@ -146,17 +144,17 @@ export function TimetableShell(props: {
                     onClick={() => setShowMobileMenu(!showMobileMenu)}
                     className="p-2"
                   >
-                    <svg 
-                      className="h-5 w-5" 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M4 6h16M4 12h16M4 18h16" 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
                       />
                     </svg>
                   </Button>
@@ -191,7 +189,7 @@ export function TimetableShell(props: {
         <AnimatePresence>
           {isMobile && showMobileMenu && id && (
             <motion.div
-              className="border-t bg-[color:var(--surface)] shadow-lg"
+              className="bg-background border-t shadow-lg"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -241,8 +239,12 @@ export function TimetableShell(props: {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-          <Card className={`w-full p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}>
-            <div className={`mb-3 font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+          <Card
+            className={`w-full p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
+          >
+            <div
+              className={`mb-3 font-medium ${isMobile ? "text-base" : "text-lg"}`}
+            >
               创建新课表
             </div>
             <Form
@@ -261,15 +263,17 @@ export function TimetableShell(props: {
               </div>
               <div>
                 <Label>模式</Label>
-                <select 
-                  name="type" 
+                <select
+                  name="type"
                   className={`select w-full ${isMobile ? "min-h-[44px] text-base" : ""}`}
                 >
                   <option value="teacher">老师课表</option>
                   <option value="student">学生课表</option>
                 </select>
               </div>
-              <div className={`flex gap-2 ${isMobile ? "flex-col pt-2" : "justify-end"}`}>
+              <div
+                className={`flex gap-2 ${isMobile ? "flex-col pt-2" : "justify-end"}`}
+              >
                 <Button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -279,10 +283,7 @@ export function TimetableShell(props: {
                 >
                   取消
                 </Button>
-                <Button 
-                  disabled={busy}
-                  className={isMobile ? "w-full" : ""}
-                >
+                <Button disabled={busy} className={isMobile ? "w-full" : ""}>
                   {busy ? "创建中…" : "创建"}
                 </Button>
               </div>

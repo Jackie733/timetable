@@ -269,10 +269,10 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-center">
               <h2 className="mb-4 text-2xl font-semibold">还没有课程表</h2>
-              <p className="mb-6 text-[color:var(--muted)]">
+              <p className="text-muted-foreground mb-6">
                 点击右上角的"创建课表"按钮开始制作您的第一个课程表
               </p>
-              <div className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--surface-2)] px-4 py-2 text-sm">
+              <div className="bg-muted inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm">
                 <span>💡</span>
                 <span>支持教师课表和学生课表两种模式</span>
               </div>
@@ -415,7 +415,7 @@ export default function Home() {
               {segments.map((seg, segIndex) => (
                 <tr key={segIndex}>
                   <td
-                    className={`sticky-col bg-[color:var(--surface)] text-center align-top ${
+                    className={`sticky-col bg-background text-center align-top ${
                       isMobile ? "p-1" : "p-2"
                     }`}
                   >
@@ -425,7 +425,7 @@ export default function Home() {
                       {seg.label || segIndex + 1}
                     </div>
                     <div
-                      className={`text-[color:var(--muted)] ${
+                      className={`text-muted-foreground ${
                         isMobile ? "text-[9px] leading-tight" : "text-[11px]"
                       }`}
                     >

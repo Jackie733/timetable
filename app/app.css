@@ -60,42 +60,9 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
-html,
-:root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --surface-2: #f9f9f9;
-  --border: #e7ebf0;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --primary: #0072f2;
-  --primary-hover: #0059c8;
-  --primary-contrast: #ffffff;
-  --accent: #ff9800;
-  --accent-contrast: #ffffff;
-  --ring: rgba(0, 114, 242, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0f14;
-    --surface: #0f141a;
-    --surface-2: #0c1218;
-    --border: #1f2937;
-    --text: #e5e7eb;
-    --muted: #94a3b8;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --primary-contrast: #0b0f14;
-    --accent: #f59e0b;
-    --accent-contrast: #0b0f14;
-    --ring: rgba(59, 130, 246, 0.35);
-  }
-}
-
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -162,14 +129,14 @@ body {
 
 /* UI Primitives */
 .surface {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 14px;
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 14px;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.03),
@@ -190,27 +157,27 @@ body {
 }
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--ring);
+  box-shadow: 0 0 0 3px hsl(var(--ring));
 }
 .btn-primary {
-  background: var(--primary);
-  color: var(--primary-contrast);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: hsl(var(--primary) / 0.9);
 }
 .btn-secondary {
-  background: var(--surface-2);
-  border-color: var(--border);
-  color: var(--text);
+  background: hsl(var(--secondary));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
 }
 .btn-ghost {
   background: transparent;
-  color: var(--text);
+  color: hsl(var(--foreground));
 }
 .btn-warning {
-  background: var(--accent);
-  color: var(--accent-contrast);
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
 }
 .btn:disabled {
   opacity: 0.6;
@@ -219,14 +186,14 @@ body {
 
 .input,
 .select {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
   border-radius: 10px;
   padding: 0.5rem 0.625rem;
 }
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: hsl(var(--muted-foreground));
   display: block;
   margin-bottom: 4px;
 }
@@ -237,24 +204,24 @@ body {
   height: 32px;
   padding: 0 0.625rem;
   border-radius: 8px;
-  color: var(--muted);
+  color: hsl(var(--muted-foreground));
 }
 .nav-link:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
 }
 .nav-link.active {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  color: var(--text);
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--foreground));
 }
 
 .table-clean th {
-  background: var(--surface-2);
+  background: hsl(var(--muted));
   font-weight: 600;
 }
 .table-clean th,
 .table-clean td {
-  border: 1px solid var(--border);
+  border: 1px solid hsl(var(--border));
 }
 
 /* 打印样式 - 让表格占满A4纸张 */
@@ -348,13 +315,13 @@ body {
   position: sticky;
   left: 0;
   z-index: 1;
-  background: var(--surface);
+  background: hsl(var(--background));
 }
 
 .session-card {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--primary);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-left: 3px solid hsl(var(--primary));
+  background: hsl(var(--primary) / 0.06);
   border-radius: 10px;
 }
 .hero-title {
@@ -363,7 +330,7 @@ body {
 }
 .hero-subtitle {
   font-size: 12px;
-  color: var(--muted);
+  color: hsl(var(--muted-foreground));
 }
 
 /* Mobile Optimizations */
@@ -463,7 +430,7 @@ body {
     position: sticky;
     left: 0;
     z-index: 2;
-    background: var(--surface);
+    background: hsl(var(--background));
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   }
 

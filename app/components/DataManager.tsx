@@ -518,8 +518,8 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
     >
       <motion.div
         className={`card overflow-hidden ${
-          isMobile 
-            ? "modal-mobile max-h-[90vh] w-full" 
+          isMobile
+            ? "modal-mobile max-h-[90vh] w-full"
             : "max-h-[80vh] w-full max-w-4xl"
         }`}
         variants={modalVariants}
@@ -532,8 +532,10 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
-            <h2 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>数据管理</h2>
+          <div className="border-border flex items-center justify-between border-b p-4">
+            <h2 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+              数据管理
+            </h2>
             <MotionButton
               onClick={onClose}
               variant="ghost"
@@ -547,16 +549,18 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             </MotionButton>
           </div>
 
-          <div className={`border-b border-[color:var(--border)] ${isMobile ? "overflow-x-auto" : "flex"}`}>
+          <div
+            className={`border-border border-b ${isMobile ? "overflow-x-auto" : "flex"}`}
+          >
             <div className={`${isMobile ? "flex min-w-max" : "flex w-full"}`}>
               {tabs.map(tab => (
                 <motion.button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                  className={`border-b-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? "border-[color:var(--primary)] text-[color:var(--primary)]"
-                      : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--text)]"
+                      ? "border-primary text-primary"
+                      : "text-muted-foreground hover:text-foreground border-transparent"
                   }`}
                   whileHover={prefersReducedMotion ? {} : { y: -1 }}
                   whileTap={prefersReducedMotion ? {} : { y: 0 }}
@@ -568,7 +572,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4 mobile-scroll">
+          <div className="mobile-scroll flex-1 overflow-auto p-4">
             <AnimatePresence mode="wait">
               {isLoading && (
                 <motion.div
@@ -578,7 +582,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   exit={{ opacity: 0 }}
                   transition={transitions.fast}
                 >
-                  <div className="text-[color:var(--muted)]">加载中...</div>
+                  <div className="text-muted-foreground">加载中...</div>
                 </motion.div>
               )}
 
@@ -626,7 +630,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
                   <div className="space-y-2">
                     {backups.length === 0 ? (
-                      <div className="py-8 text-center text-[color:var(--muted)]">
+                      <div className="text-muted-foreground py-8 text-center">
                         暂无备份
                       </div>
                     ) : (
@@ -637,7 +641,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                         >
                           <div>
                             <div className="font-medium">{backup.name}</div>
-                            <div className="text-sm text-[color:var(--muted)]">
+                            <div className="text-muted-foreground text-sm">
                               {new Date(
                                 backup.createdAt || ""
                               ).toLocaleString()}{" "}
@@ -779,7 +783,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 >
                   <div className="surface rounded-lg p-4">
                     <div className="mb-2 font-medium">清理孤立记录</div>
-                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                    <p className="text-muted-foreground mb-3 text-sm">
                       清理引用不存在课表或课程的记录。这些记录将被软删除，可在回收站中恢复。
                     </p>
                     <Button variant="destructive" onClick={cleanupOrphaned}>
@@ -789,7 +793,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
                   <div className="surface rounded-lg p-4">
                     <div className="mb-2 font-medium">数据完整性检查</div>
-                    <p className="mb-3 text-sm text-[color:var(--muted)]">
+                    <p className="text-muted-foreground mb-3 text-sm">
                       检查数据库中的数据完整性问题，包括孤立记录和引用错误。
                     </p>
                     <Button variant="secondary" onClick={checkIntegrity}>
@@ -833,7 +837,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                             {records.map(record => (
                               <div
                                 key={record.id}
-                                className="flex items-center justify-between border-b border-[color:var(--border)] py-2 last:border-b-0"
+                                className="border-border flex items-center justify-between border-b py-2 last:border-b-0"
                               >
                                 <div>
                                   <div className="font-medium">
@@ -841,7 +845,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                                       (record as Course).title ||
                                       `${type.slice(0, -1)} ${record.id.slice(0, 8)}`}
                                   </div>
-                                  <div className="text-sm text-[color:var(--muted)]">
+                                  <div className="text-muted-foreground text-sm">
                                     删除时间:{" "}
                                     {record.deletedAt
                                       ? new Date(
@@ -895,7 +899,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   {deletedRecords.timetables.length === 0 &&
                     deletedRecords.courses.length === 0 &&
                     deletedRecords.sessions.length === 0 && (
-                      <div className="py-8 text-center text-[color:var(--muted)]">
+                      <div className="text-muted-foreground py-8 text-center">
                         回收站为空
                       </div>
                     )}
@@ -935,7 +939,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     </select>
                   </div>
 
-                  <div className={`gap-4 ${isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2"}`}>
+                  <div
+                    className={`gap-4 ${isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2"}`}
+                  >
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium">课表管理</h3>
                       <Button
@@ -989,7 +995,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   {batchResult && (
                     <Card className="p-4">
                       <h3 className="mb-2 font-medium">操作结果:</h3>
-                      <div className="text-sm text-[color:var(--muted)]">
+                      <div className="text-muted-foreground text-sm">
                         {batchResult}
                       </div>
                       <Button
@@ -1005,7 +1011,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
 
                   <Card className="p-4">
                     <h3 className="mb-2 font-medium">CSV导入</h3>
-                    <p className={`mb-3 text-[color:var(--muted)] ${isMobile ? "text-sm" : "text-sm"}`}>
+                    <p
+                      className={`text-muted-foreground mb-3 ${isMobile ? "text-sm" : "text-sm"}`}
+                    >
                       支持导入格式：课程名称,教师,地点,星期,开始时间,结束时间,备注
                     </p>
                     <Input
@@ -1062,16 +1070,22 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
               transition={springPresets.default}
             >
               <div className="mb-4">
-                <h3 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+                <h3
+                  className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}
+                >
                   {confirmDialog.title}
                 </h3>
-                <p className={`mt-2 text-gray-600 ${isMobile ? "text-sm" : "text-sm"}`}>
+                <p
+                  className={`mt-2 text-gray-600 ${isMobile ? "text-sm" : "text-sm"}`}
+                >
                   {confirmDialog.message}
                 </p>
               </div>
-              <div className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}>
-                <Button 
-                  variant="ghost" 
+              <div
+                className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}
+              >
+                <Button
+                  variant="ghost"
                   onClick={confirmDialog.onCancel}
                   className={isMobile ? "w-full" : ""}
                 >
@@ -1120,7 +1134,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                 }}
               >
                 <div className="mb-4">
-                  <h3 className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}>
+                  <h3
+                    className={`font-medium ${isMobile ? "text-base" : "text-lg"}`}
+                  >
                     {inputDialog.title}
                   </h3>
                   <div className="mt-3">
@@ -1136,7 +1152,9 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     />
                   </div>
                 </div>
-                <div className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}>
+                <div
+                  className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}
+                >
                   <Button
                     type="button"
                     variant="ghost"
@@ -1145,10 +1163,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                   >
                     取消
                   </Button>
-                  <Button 
-                    type="submit"
-                    className={isMobile ? "w-full" : ""}
-                  >
+                  <Button type="submit" className={isMobile ? "w-full" : ""}>
                     确定
                   </Button>
                 </div>
