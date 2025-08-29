@@ -15,7 +15,7 @@ import {
   type Course,
   type Session,
 } from "~/db";
-import { TimetableShell } from "~/components/TimetableShell";
+import { AppLayout } from "~/components/layout";
 import { TimetableView } from "~/components/timetable/TimetableView";
 import { CourseEditForm } from "~/components/timetable/CourseEditForm";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
@@ -25,6 +25,7 @@ import { useMobileDetection } from "~/hooks/useMobileDetection";
 import { useCourseEditing } from "~/hooks/useCourseEditing";
 import { useConfirmDialog } from "~/hooks/useConfirmDialog";
 import type { DragSession } from "~/utils/dragDropUtils";
+import { DEFAULT_COLOR } from "~/components/common";
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [
@@ -61,13 +62,12 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       const timetableId = String(fd.get("timetableId"));
       const courseTitle = String(fd.get("title") || "").trim();
       const location = String(fd.get("location") || "").trim();
-      const color = String(fd.get("color") || "#a5b4fc");
+      const color = String(fd.get("color") || DEFAULT_COLOR);
       const dayOfWeek = Number(fd.get("dayOfWeek"));
       const startMinutes = Number(fd.get("startMinutes"));
       const endMinutes = Number(fd.get("endMinutes"));
       const existingSessionId = String(fd.get("existingSessionId") || "");
 
-      // 验证输入数据
       if (
         !timetableId ||
         !courseTitle ||
@@ -260,7 +260,7 @@ export default function Home() {
   if (!data.timetables.length) {
     return (
       <>
-        <TimetableShell title="欢迎使用课程表" showCreateButton={true}>
+        <AppLayout title="欢迎使用课程表" showCreateButton={true}>
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-center">
               <h2 className="mb-4 text-2xl font-semibold">还没有课程表</h2>
@@ -273,7 +273,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </TimetableShell>
+        </AppLayout>
         {showMobileGuide && (
           <MobileUserGuide
             onClose={() => {
@@ -340,7 +340,7 @@ export default function Home() {
   };
 
   return (
-    <TimetableShell id={timetable.id} title={timetable.name}>
+    <AppLayout id={timetable.id} title={timetable.name}>
       {isMobile && <MobileOptimizedMessage />}
 
       <TimetableView
@@ -376,6 +376,6 @@ export default function Home() {
         onCancel={confirmDialog.onCancel}
         isMobile={isMobile}
       />
-    </TimetableShell>
+    </AppLayout>
   );
 }

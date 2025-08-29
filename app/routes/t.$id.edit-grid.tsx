@@ -2,7 +2,7 @@ import type { Route } from "./+types/t.$id.edit-grid";
 import { useLoaderData, Form, useNavigation } from "react-router";
 import { motion } from "motion/react";
 import { db, type Timetable } from "../db";
-import { TimetableShell } from "../components/TimetableShell";
+import { AppLayout } from "../components/layout";
 import { TimePicker } from "../components/TimePicker";
 import { springPresets, useReducedMotion } from "../utils/animations";
 import { useMobileDetection } from "../hooks/useMobileDetection";
@@ -65,7 +65,7 @@ export default function EditGrid() {
   const segmentsCount = Math.max(existingSegments.length, 6);
 
   return (
-    <TimetableShell id={timetable.id} title={`${timetable.name}（课表设置）`}>
+    <AppLayout id={timetable.id} title={`${timetable.name}（课表设置）`}>
       <motion.div
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -217,6 +217,6 @@ export default function EditGrid() {
           </motion.aside>
         </Form>
       </motion.div>
-    </TimetableShell>
+    </AppLayout>
   );
 }

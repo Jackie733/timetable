@@ -6,7 +6,7 @@ export interface ColorSelectorProps {
   compact?: boolean;
 }
 
-const DEFAULT_COLORS = [
+export const DEFAULT_COLORS = [
   "#ef444480", // 红色 (50% 透明度)
   "#f9731680", // 橙色 (50% 透明度)
   "#eab30880", // 黄色 (50% 透明度)
@@ -20,6 +20,7 @@ const DEFAULT_COLORS = [
   "#10b98180", // 翠绿 (50% 透明度)
   "#8b5cf680", // 靛青 (50% 透明度)
 ];
+export const DEFAULT_COLOR = DEFAULT_COLORS[5];
 
 export function ColorSelector({
   selectedColor,

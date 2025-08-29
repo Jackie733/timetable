@@ -1,86 +1,68 @@
-import {
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import { Link, NavLink, Form, useNavigation } from "react-router";
+import { useState, useMemo, type ReactNode } from "react";
+import { Link, NavLink } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Printer, Eye, Settings, Home, Menu } from "lucide-react";
-import DataManager from "./DataManager";
-import {
-  springPresets,
-  useReducedMotion,
-  useOriginAwareAnimation,
-} from "../utils/animations";
-import { useMobileDetection } from "../hooks/useMobileDetection";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Card } from "~/components/ui/card";
+import { springPresets, useReducedMotion } from "~/utils/animations";
+import { useMobileDetection } from "~/hooks/useMobileDetection";
+import { Button } from "../ui/button";
 
-export function TimetableShell(props: {
+export interface AppHeaderProps {
   id?: string;
-  title?: string;
-  children?: ReactNode;
   actions?: ReactNode;
   showCreateButton?: boolean;
-}) {
-  const { id, title, children, actions, showCreateButton = false } = props;
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDataManager, setShowDataManager] = useState(false);
+  onCreateClick?: () => void;
+  onPrintClick?: () => void;
+  onPrintPreviewClick?: () => void;
+  onDataManagerClick?: () => void;
+  isPrintPreview?: boolean;
+}
+
+export function AppHeader({
+  id,
+  actions,
+  showCreateButton = false,
+  onCreateClick,
+  onPrintClick,
+  onPrintPreviewClick,
+  onDataManagerClick,
+  isPrintPreview = false,
+}: AppHeaderProps) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [isPrintPreview, setIsPrintPreview] = useState(false);
-  const dataManagerButtonRef = useRef<HTMLButtonElement>(null);
-  const nav = useNavigation();
-  const busy = nav.state === "submitting";
   const prefersReducedMotion = useReducedMotion();
   const { isMobile } = useMobileDetection();
-  const dataManagerOrigin = useOriginAwareAnimation(
-    dataManagerButtonRef as RefObject<HTMLElement>
-  );
 
   const hasAnimated = useMemo(() => {
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem("nav-animated") === "true";
   }, []);
 
-  // 打印函数
-  const handlePrint = () => {
-    // 设置打印日期
-    const printDate = new Date().toLocaleDateString("zh-CN");
-    const printHeader = document.querySelector(".print-header");
-    if (printHeader) {
-      printHeader.setAttribute("data-print-date", printDate);
-    }
-    window.print();
+  const handleMobileMenuToggle = () => {
+    setShowMobileMenu(!showMobileMenu);
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && !hasAnimated) {
-      sessionStorage.setItem("nav-animated", "true");
-    }
-  }, [hasAnimated]);
+  const closeMobileMenu = () => {
+    setShowMobileMenu(false);
+  };
+
+  const handleMobileAction = (action?: () => void) => {
+    action?.();
+    closeMobileMenu();
+  };
 
   return (
-    <div
-      className={`flex min-h-[100svh] flex-col ${isPrintPreview ? "print-preview-mode" : ""}`}
-    >
+    <>
       {isPrintPreview && (
-        <button
-          className="print-preview-toggle"
-          onClick={() => setIsPrintPreview(false)}
-        >
+        <button className="print-preview-toggle" onClick={onPrintPreviewClick}>
           退出打印预览
         </button>
       )}
+
       <header
-        className={`bg-background/95 sticky top-0 z-10 border-b backdrop-blur ${isMobile ? "header-landscape" : ""}`}
+        className={`bg-background/95 sticky top-0 z-10 border-b backdrop-blur ${
+          isMobile ? "header-landscape" : ""
+        }`}
       >
         <div className="container mx-auto flex items-center justify-between px-2 py-2 sm:px-4 sm:py-3">
-          {/* Logo/Title */}
           <div className="flex items-center gap-2">
             <Link to="/" className="hero-title font-semibold tracking-tight">
               Timetable
@@ -88,7 +70,6 @@ export function TimetableShell(props: {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           {!isMobile && id && (
             <nav className="flex items-center gap-1 text-sm">
               <motion.div
@@ -126,11 +107,10 @@ export function TimetableShell(props: {
             </nav>
           )}
 
-          {/* Actions */}
           <div className="flex items-center gap-2">
             {showCreateButton && (
               <Button
-                onClick={() => setShowCreateModal(true)}
+                onClick={onCreateClick}
                 size={isMobile ? "sm" : "sm"}
                 asChild
               >
@@ -150,12 +130,11 @@ export function TimetableShell(props: {
 
             {id && (
               <>
-                {/* Mobile menu button */}
                 {isMobile && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    onClick={handleMobileMenuToggle}
                     className="p-2"
                   >
                     <Menu className="h-5 w-5" />
@@ -165,7 +144,7 @@ export function TimetableShell(props: {
                 {!isMobile && (
                   <>
                     <motion.button
-                      onClick={handlePrint}
+                      onClick={onPrintClick}
                       className="btn btn-ghost text-sm"
                       title="打印课表"
                       whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
@@ -181,7 +160,7 @@ export function TimetableShell(props: {
                       <Printer className="h-4 w-4" />
                     </motion.button>
                     <motion.button
-                      onClick={() => setIsPrintPreview(!isPrintPreview)}
+                      onClick={onPrintPreviewClick}
                       className="btn btn-ghost text-sm"
                       title="打印预览"
                       whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
@@ -197,8 +176,7 @@ export function TimetableShell(props: {
                       <Eye className="h-4 w-4" />
                     </motion.button>
                     <motion.button
-                      ref={dataManagerButtonRef}
-                      onClick={() => setShowDataManager(true)}
+                      onClick={onDataManagerClick}
                       className="btn btn-ghost text-sm"
                       title="数据管理"
                       whileHover={
@@ -223,7 +201,6 @@ export function TimetableShell(props: {
           </div>
         </div>
 
-        {/* Mobile menu dropdown */}
         <AnimatePresence>
           {isMobile && showMobileMenu && id && (
             <motion.div
@@ -239,7 +216,7 @@ export function TimetableShell(props: {
                   className={({ isActive }) =>
                     `nav-link ${isActive ? "active" : ""} justify-start`
                   }
-                  onClick={() => setShowMobileMenu(false)}
+                  onClick={closeMobileMenu}
                 >
                   <Home className="mr-2 h-4 w-4" />
                   主页面
@@ -249,36 +226,27 @@ export function TimetableShell(props: {
                   className={({ isActive }) =>
                     `nav-link ${isActive ? "active" : ""} justify-start`
                   }
-                  onClick={() => setShowMobileMenu(false)}
+                  onClick={closeMobileMenu}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   课表设置
                 </NavLink>
                 <button
-                  onClick={() => {
-                    handlePrint();
-                    setShowMobileMenu(false);
-                  }}
+                  onClick={() => handleMobileAction(onPrintClick)}
                   className="nav-link justify-start"
                 >
                   <Printer className="mr-2 h-4 w-4" />
                   打印课表
                 </button>
                 <button
-                  onClick={() => {
-                    setIsPrintPreview(!isPrintPreview);
-                    setShowMobileMenu(false);
-                  }}
+                  onClick={() => handleMobileAction(onPrintPreviewClick)}
                   className="nav-link justify-start"
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   打印预览
                 </button>
                 <button
-                  onClick={() => {
-                    setShowDataManager(true);
-                    setShowMobileMenu(false);
-                  }}
+                  onClick={() => handleMobileAction(onDataManagerClick)}
                   className="nav-link justify-start"
                 >
                   <Settings className="mr-2 h-4 w-4" />
@@ -289,87 +257,6 @@ export function TimetableShell(props: {
           )}
         </AnimatePresence>
       </header>
-
-      <main className="container mx-auto flex-1 px-2 py-4 sm:px-4 sm:py-6">
-        <div className="print-keep-together">
-          {title && (
-            <div className="print-header">
-              <h1 className="print-title mb-4 text-lg font-semibold sm:text-xl">
-                {title}
-              </h1>
-            </div>
-          )}
-          <div className="print-timetable-container">{children}</div>
-        </div>
-      </main>
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-          <Card
-            className={`w-full p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
-          >
-            <div
-              className={`mb-3 font-medium ${isMobile ? "text-base" : "text-lg"}`}
-            >
-              创建新课表
-            </div>
-            <Form
-              method="post"
-              onSubmit={() => setShowCreateModal(false)}
-              className="space-y-3"
-            >
-              <div>
-                <Label>名称</Label>
-                <Input
-                  name="name"
-                  placeholder="例如：张老师-春季学期"
-                  required
-                  className={isMobile ? "text-base" : ""}
-                />
-              </div>
-              <div>
-                <Label>模式</Label>
-                <select
-                  name="type"
-                  className={`select w-full ${isMobile ? "min-h-[44px] text-base" : ""}`}
-                >
-                  <option value="teacher">老师课表</option>
-                  <option value="student">学生课表</option>
-                </select>
-              </div>
-              <div
-                className={`flex gap-2 ${isMobile ? "flex-col pt-2" : "justify-end"}`}
-              >
-                <Button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  variant="ghost"
-                  size="sm"
-                  className={isMobile ? "w-full" : ""}
-                >
-                  取消
-                </Button>
-                <Button disabled={busy} className={isMobile ? "w-full" : ""}>
-                  {busy ? "创建中…" : "创建"}
-                </Button>
-              </div>
-            </Form>
-          </Card>
-        </div>
-      )}
-
-      <AnimatePresence>
-        {showDataManager && (
-          <div
-            style={{
-              transformOrigin: `${dataManagerOrigin.x} ${dataManagerOrigin.y}`,
-            }}
-          >
-            <DataManager onClose={() => setShowDataManager(false)} />
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+    </>
   );
 }
