@@ -5,11 +5,20 @@ import { db, type Timetable } from "../db";
 import { AppLayout } from "../components/layout";
 import { TimePicker } from "../components/TimePicker";
 import { springPresets, useReducedMotion } from "../utils/animations";
+import { TimeUtils } from "../utils/timeUtils";
 import { useMobileDetection } from "../hooks/useMobileDetection";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Card } from "~/components/ui/card";
+
+function getDefaultStartTime(segmentIndex: number): number {
+  return TimeUtils.getStandardSchoolTime(segmentIndex).startMinutes;
+}
+
+function getDefaultEndTime(segmentIndex: number): number {
+  return TimeUtils.getStandardSchoolTime(segmentIndex).endMinutes;
+}
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const id = params.id!;
@@ -43,7 +52,9 @@ export async function clientAction({
       1,
       Math.min(1440, Number(fd.get(`seg_${i}_end`) || 0))
     );
-    if (endMinutes > startMinutes) {
+
+    // 使用 TimeUtils 验证时间范围的有效性
+    if (TimeUtils.isValidTimeRange(startMinutes, endMinutes)) {
       segments.push({
         label: label || String(i + 1),
         startMinutes,
@@ -62,7 +73,7 @@ export default function EditGrid() {
   const prefersReducedMotion = useReducedMotion();
   const { isMobile } = useMobileDetection();
   const existingSegments = timetable.segments ?? [];
-  const segmentsCount = Math.max(existingSegments.length, 6);
+  const segmentsCount = Math.max(existingSegments.length, 6); // 默认6节课（上午3节+下午3节）
 
   return (
     <AppLayout id={timetable.id} title={`${timetable.name}（课表设置）`}>
@@ -156,7 +167,9 @@ export default function EditGrid() {
                       >
                         <TimePicker
                           name={`seg_${i}_start`}
-                          defaultValue={seg?.startMinutes ?? i * 50 + 480} // 默认从8:00开始，每节课50分钟间隔
+                          defaultValue={
+                            seg?.startMinutes ?? getDefaultStartTime(i)
+                          }
                           label="开始时间"
                           min="06:00"
                           max="22:00"
@@ -164,7 +177,7 @@ export default function EditGrid() {
                         />
                         <TimePicker
                           name={`seg_${i}_end`}
-                          defaultValue={seg?.endMinutes ?? i * 50 + 525} // 默认45分钟课时 + 5分钟课间
+                          defaultValue={seg?.endMinutes ?? getDefaultEndTime(i)}
                           label="结束时间"
                           min="06:30"
                           max="22:30"
@@ -208,9 +221,10 @@ export default function EditGrid() {
                 >
                   <li>• 选择显示天数（5天/7天）</li>
                   <li>• 设置每日节次数量</li>
-                  <li>• 用时间选择器设置时间段</li>
+                  <li>• 默认按学校标准：40分钟/节，课间15分钟</li>
+                  <li>• 上午3节从8:00开始，下午3节从13:00开始</li>
+                  <li>• 时间可自定义调整，支持5分钟间隔</li>
                   <li>• 标签可自定义（早读、午休等）</li>
-                  <li>• 支持5分钟间隔调整</li>
                 </ul>
               </div>
             </Card>

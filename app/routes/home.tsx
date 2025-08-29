@@ -15,6 +15,7 @@ import {
   type Course,
   type Session,
 } from "~/db";
+import { TimeUtils } from "~/utils/timeUtils";
 import { AppLayout } from "~/components/layout";
 import { TimetableView } from "~/components/timetable/TimetableView";
 import { CourseEditForm } from "~/components/timetable/CourseEditForm";
@@ -82,17 +83,13 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
         return { ok: false } as const;
       }
 
-      // 如果是编辑现有课程，先删除旧的 session
       if (existingSessionId) {
         await db.sessions.delete(existingSessionId);
       }
 
-      // 对于编辑现有session，如果课程名称没有变化，保持原课程ID
-      // 对于新session或课程名称变化，总是创建新课程或寻找完全匹配的课程
       let course: Course;
 
       if (existingSessionId) {
-        // 编辑模式：检查是否有完全匹配的课程（名称和颜色都相同）
         const existingCourse = await db
           .getActive(db.courses)
           .filter(
@@ -106,7 +103,6 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
         if (existingCourse) {
           course = existingCourse;
         } else {
-          // 没有完全匹配的课程，创建新课程
           course = {
             id: crypto.randomUUID(),
             timetableId,
@@ -116,7 +112,6 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
           await db.courses.add(course);
         }
       } else {
-        // 新增模式：也是寻找完全匹配的课程，没有则创建
         const existingCourse = await db
           .getActive(db.courses)
           .filter(
@@ -174,7 +169,6 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
         return { ok: false } as const;
       }
 
-      // 更新会话的时间信息
       await db.sessions.update(sessionId, {
         dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
         startMinutes,
@@ -186,6 +180,9 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
     const name = (fd.get("name") as string) || "未命名课表";
     const type = ((fd.get("type") as string) || "teacher") as TimetableType;
     const id = crypto.randomUUID();
+
+    const standardSchedule = TimeUtils.generateStandardSchoolSchedule();
+
     const timetable: Timetable = {
       id,
       name,
@@ -193,10 +190,10 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       weekStart: 1,
       termRange: null,
       days: 5,
-      segments: Array.from({ length: 6 }).map((_, i) => ({
-        label: String(i + 1),
-        startMinutes: i * 60 + 480, // 8:00 开始
-        endMinutes: (i + 1) * 60 + 480, // 每节课1小时
+      segments: standardSchedule.map(item => ({
+        label: item.label,
+        startMinutes: item.startMinutes,
+        endMinutes: item.endMinutes,
       })),
     };
     await db.timetables.add(timetable);
@@ -215,7 +212,6 @@ export default function Home() {
   const navigate = useNavigate();
   const submit = useSubmit();
 
-  // 使用自定义钩子
   const { isMobile } = useMobileDetection();
   const { confirmDialog, showConfirm } = useConfirmDialog();
   const {
@@ -231,17 +227,14 @@ export default function Home() {
     },
   });
 
-  // 状态定义
   const [showMobileGuide, setShowMobileGuide] = useState(false);
 
-  // 监听操作成功，关闭模态框
   useEffect(() => {
     if (actionData?.ok && nav.state === "idle" && editingCell) {
       closeEdit();
     }
   }, [actionData, nav.state, editingCell, closeEdit]);
 
-  // 检测移动端并显示引导
   useEffect(() => {
     if (
       isMobile &&
@@ -252,10 +245,8 @@ export default function Home() {
     }
   }, [isMobile, data.timetables.length]);
 
-  // Handle navigation after timetable creation
   useEffect(() => {
     if (actionData?.ok && actionData.id && nav.state === "idle") {
-      // After creating a timetable, take user to edit page
       navigate(`/t/${actionData.id}/edit-grid`, { replace: true });
     }
   }, [actionData, nav.state, navigate]);

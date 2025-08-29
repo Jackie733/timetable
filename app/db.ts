@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { TimeUtils } from "./utils/timeUtils";
 
 export type TimetableType = "teacher" | "student";
 
@@ -21,6 +22,9 @@ export interface Timetable extends BaseEntity {
     label?: string;
     startMinutes: number;
     endMinutes: number;
+    // 可选：添加便于阅读的时间字符串
+    startTime?: string; // HH:mm 格式，用于显示
+    endTime?: string; // HH:mm 格式，用于显示
   }>;
 }
 
@@ -491,6 +495,101 @@ export class TimetableDB extends Dexie {
       reader.onerror = () => reject(new Error("文件读取失败"));
       reader.readAsText(file);
     });
+  }
+
+  // 时间工具方法 - 为段落添加时间字符串
+  async enrichTimetableWithTimeStrings(
+    timetableId: string
+  ): Promise<Timetable | undefined> {
+    const timetable = await this.getActive(this.timetables)
+      .filter(t => t.id === timetableId)
+      .first();
+    if (!timetable) return undefined;
+
+    if (timetable.segments) {
+      timetable.segments = timetable.segments.map(segment => ({
+        ...segment,
+        startTime: TimeUtils.minutesToTime(segment.startMinutes),
+        endTime: TimeUtils.minutesToTime(segment.endMinutes),
+      }));
+    }
+
+    return timetable;
+  }
+
+  // 创建带有标准学校时间表的课表
+  async createStandardSchoolTimetable(
+    name: string,
+    type: TimetableType
+  ): Promise<string> {
+    const id = crypto.randomUUID();
+    const standardSchedule = TimeUtils.generateStandardSchoolSchedule();
+
+    const timetable: Timetable = {
+      id,
+      name,
+      type,
+      days: 5, // 工作日
+      segments: standardSchedule.map(item => ({
+        label: item.label,
+        startMinutes: item.startMinutes,
+        endMinutes: item.endMinutes,
+        startTime: item.startTime,
+        endTime: item.endTime,
+      })),
+    };
+
+    await this.timetables.add(timetable);
+    return id;
+  }
+
+  // 验证时间表中的时间段是否有冲突
+  async validateTimetableTimeSegments(timetableId: string): Promise<{
+    isValid: boolean;
+    conflicts: Array<{
+      segment1: number;
+      segment2: number;
+      reason: string;
+    }>;
+  }> {
+    const timetable = await this.getActive(this.timetables)
+      .filter(t => t.id === timetableId)
+      .first();
+    if (!timetable?.segments) {
+      return { isValid: true, conflicts: [] };
+    }
+
+    const conflicts: Array<{
+      segment1: number;
+      segment2: number;
+      reason: string;
+    }> = [];
+
+    // 检查段落之间的重叠
+    for (let i = 0; i < timetable.segments.length; i++) {
+      for (let j = i + 1; j < timetable.segments.length; j++) {
+        const seg1 = timetable.segments[i];
+        const seg2 = timetable.segments[j];
+
+        const start1 = TimeUtils.minutesToTime(seg1.startMinutes);
+        const end1 = TimeUtils.minutesToTime(seg1.endMinutes);
+        const start2 = TimeUtils.minutesToTime(seg2.startMinutes);
+        const end2 = TimeUtils.minutesToTime(seg2.endMinutes);
+
+        if (TimeUtils.isTimeOverlap(start1, end1, start2, end2)) {
+          conflicts.push({
+            segment1: i,
+            segment2: j,
+            reason: `时间段重叠：${seg1.label || `第${i + 1}节`} (${start1}-${end1}) 与 ${seg2.label || `第${j + 1}节`} (${start2}-${end2})`,
+          });
+        }
+      }
+    }
+
+    return {
+      isValid: conflicts.length === 0,
+      conflicts,
+    };
   }
 }
 

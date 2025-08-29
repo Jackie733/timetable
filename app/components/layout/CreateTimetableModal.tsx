@@ -57,7 +57,6 @@ export function CreateTimetableModal({
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Submit to React Router
     submit(values, { method: "post" });
     onClose();
   }
@@ -73,7 +72,7 @@ export function CreateTimetableModal({
           创建新课表
         </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
