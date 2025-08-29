@@ -256,6 +256,94 @@ body {
 .table-clean td {
   border: 1px solid var(--border);
 }
+
+/* 打印样式 - 让表格占满A4纸张 */
+@media print {
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table-clean {
+    height: calc(100vh - 4rem); /* 减去页面边距 */
+    page-break-inside: avoid;
+    width: 100% !important;
+    min-width: auto !important;
+  }
+
+  .table-clean tbody {
+    height: 100%;
+    display: table-row-group;
+  }
+
+  .table-clean tbody tr {
+    /* 动态分配高度 - 使用CSS自定义属性 */
+    height: calc((100vh - 8rem) / var(--segments-count, 6));
+    page-break-inside: avoid;
+  }
+
+  .table-clean tbody td {
+    height: 100%;
+    vertical-align: stretch;
+  }
+
+  .table-clean th,
+  .table-clean td {
+    border: 1px solid #000 !important;
+    padding: 0.25rem !important;
+  }
+
+  /* 确保课程块在打印时显示颜色 */
+  .table-clean tbody td > div > div {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 隐藏非必要元素 */
+  header,
+  .mobile-optimized-message,
+  .mobile-scroll-container {
+    display: none !important;
+  }
+
+  /* 确保容器占满页面 */
+  main {
+    height: 100vh !important;
+    padding: 0 !important;
+  }
+}
+
+/* 屏幕显示时的灵活高度 */
+@media screen {
+  .table-clean tbody tr {
+    height: 4rem;
+    min-height: 4rem;
+  }
+
+  .table-clean tbody td {
+    height: 4rem;
+    min-height: 4rem;
+    vertical-align: stretch;
+  }
+
+  @media (max-width: 768px) {
+    .table-clean tbody tr {
+      height: 2.5rem;
+      min-height: 2.5rem;
+    }
+
+    .table-clean tbody td {
+      height: 2.5rem;
+      min-height: 2.5rem;
+      vertical-align: stretch;
+    }
+  }
+}
 .sticky-col {
   position: sticky;
   left: 0;

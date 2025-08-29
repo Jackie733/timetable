@@ -8,7 +8,6 @@ import {
   useNavigate,
   useSubmit,
 } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
 import {
   db,
   type Timetable,
@@ -22,9 +21,13 @@ import { MobileUserGuide } from "../components/MobileUserGuide";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Card } from "~/components/ui/card";
-
-const MotionCard = motion.create(Card);
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
 
 interface ConfirmDialog {
   isOpen: boolean;
@@ -95,21 +98,57 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
         await db.sessions.delete(existingSessionId);
       }
 
-      let course = await db
-        .getActive(db.courses)
-        .filter(c => c.timetableId === timetableId && c.title === courseTitle)
-        .first();
-      if (!course) {
-        course = {
-          id: crypto.randomUUID(),
-          timetableId,
-          title: courseTitle,
-          color: color,
-        } as Course;
-        await db.courses.add(course);
+      // 对于编辑现有session，如果课程名称没有变化，保持原课程ID
+      // 对于新session或课程名称变化，总是创建新课程或寻找完全匹配的课程
+      let course: Course;
+
+      if (existingSessionId) {
+        // 编辑模式：检查是否有完全匹配的课程（名称和颜色都相同）
+        const existingCourse = await db
+          .getActive(db.courses)
+          .filter(
+            c =>
+              c.timetableId === timetableId &&
+              c.title === courseTitle &&
+              c.color === color
+          )
+          .first();
+
+        if (existingCourse) {
+          course = existingCourse;
+        } else {
+          // 没有完全匹配的课程，创建新课程
+          course = {
+            id: crypto.randomUUID(),
+            timetableId,
+            title: courseTitle,
+            color: color,
+          } as Course;
+          await db.courses.add(course);
+        }
       } else {
-        // 更新已存在课程的颜色
-        await db.courses.update(course.id, { color: color });
+        // 新增模式：也是寻找完全匹配的课程，没有则创建
+        const existingCourse = await db
+          .getActive(db.courses)
+          .filter(
+            c =>
+              c.timetableId === timetableId &&
+              c.title === courseTitle &&
+              c.color === color
+          )
+          .first();
+
+        if (existingCourse) {
+          course = existingCourse;
+        } else {
+          course = {
+            id: crypto.randomUUID(),
+            timetableId,
+            title: courseTitle,
+            color: color,
+          } as Course;
+          await db.courses.add(course);
+        }
       }
       const session: Session = {
         id: crypto.randomUUID(),
@@ -189,14 +228,26 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileGuide, setShowMobileGuide] = useState(false);
 
+  // 监听操作成功，关闭模态框
+  useEffect(() => {
+    if (actionData?.ok && nav.state === "idle" && editingCell) {
+      setEditingCell(null);
+      setFormDefaults(null);
+    }
+  }, [actionData, nav.state, editingCell]);
+
   // 检测移动端
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
+
       // 如果是移动端且是新用户，显示引导
-      if (mobile && !data.timetables.length && !localStorage.getItem('mobile-guide-seen')) {
+      if (
+        mobile &&
+        !data.timetables.length &&
+        !localStorage.getItem("mobile-guide-seen")
+      ) {
         setShowMobileGuide(true);
       }
     };
@@ -229,11 +280,11 @@ export default function Home() {
           </div>
         </TimetableShell>
         {showMobileGuide && (
-          <MobileUserGuide 
+          <MobileUserGuide
             onClose={() => {
               setShowMobileGuide(false);
-              localStorage.setItem('mobile-guide-seen', 'true');
-            }} 
+              localStorage.setItem("mobile-guide-seen", "true");
+            }}
           />
         )}
       </>
@@ -252,6 +303,14 @@ export default function Home() {
           endMinutes: (i + 1) * 60 + 480, // 9:00, 10:00, ...
         }))
   )!;
+
+  // 设置打印时的动态行数
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--segments-count",
+      segments.length.toString()
+    );
+  }, [segments.length]);
 
   const showConfirm = (title: string, message: string): Promise<boolean> => {
     return new Promise(resolve => {
@@ -310,12 +369,17 @@ export default function Home() {
   return (
     <TimetableShell id={timetable.id} title={timetable.name}>
       {isMobile && <MobileOptimizedMessage />}
-      
-      <div className={isMobile ? "overflow-x-auto mobile-scroll-container pb-2" : ""}>
-        <div className={isMobile ? "min-w-fit" : ""}>
+      <div
+        className={`print:h-full ${
+          isMobile ? "mobile-scroll-container overflow-x-auto pb-2" : ""
+        }`}
+      >
+        <div className={`print:h-full ${isMobile ? "min-w-fit" : ""}`}>
           <table
-            className={`table-clean w-full border-separate border-spacing-0 ${
-              isMobile ? "table-ultra-compact text-xs" : "table-fixed min-w-[720px]"
+            className={`table-clean w-full border-separate border-spacing-0 print:h-full ${
+              isMobile
+                ? "table-ultra-compact text-xs"
+                : "min-w-[720px] table-fixed"
             }`}
             style={
               isMobile
@@ -342,9 +406,7 @@ export default function Home() {
                       isMobile ? "w-16 p-1 text-xs" : "p-2"
                     }`}
                   >
-                    {isMobile
-                      ? dayLabels[i].replace("星期", "")
-                      : dayLabels[i]}
+                    {isMobile ? dayLabels[i].replace("星期", "") : dayLabels[i]}
                   </th>
                 ))}
               </tr>
@@ -379,7 +441,6 @@ export default function Home() {
                     const cellSessions = sessions.filter(
                       s =>
                         s.dayOfWeek === dayOfWeek &&
-                        // Session 与当前时间段有重叠即可显示
                         s.startMinutes < seg.endMinutes &&
                         s.endMinutes > seg.startMinutes
                     );
@@ -387,44 +448,50 @@ export default function Home() {
                       courses.map(c => [c.id, c] as const)
                     );
                     return (
-                      <td key={day} className="p-0 align-top">
+                      <td key={day} className="h-full p-0">
                         <div
-                          className={`cursor-pointer touch-action-manipulation rounded-sm transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50 active:bg-gray-100/80 ${
-                            isMobile ? "min-h-8 p-0.5" : "min-h-16 p-2"
+                          className={`touch-action-manipulation flex h-full cursor-pointer flex-col rounded-xs p-0.5 transition-colors hover:bg-gray-50/80 active:bg-gray-100/80 dark:hover:bg-gray-800/50 ${
+                            isMobile ? "min-h-8" : "min-h-16"
                           }`}
+                          style={{
+                            height: "100%",
+                            minHeight: isMobile ? "2rem" : "4rem",
+                          }}
                           onClick={() => {
-                            const session = cellSessions[0]; // 取第一个session作为编辑对象
+                            const session = cellSessions[0];
                             const course = session
                               ? courseById.get(session.courseId)
                               : undefined;
                             openEdit(dayOfWeek, segIndex, session, course);
                           }}
-                          onTouchStart={(e) => {
-                            // 添加轻微的触摸反馈
+                          onTouchStart={e => {
                             if (isMobile) {
-                              e.currentTarget.style.transform = 'scale(0.98)';
+                              e.currentTarget.style.transform = "scale(0.98)";
                             }
                           }}
-                          onTouchEnd={(e) => {
-                            // 恢复原始大小
+                          onTouchEnd={e => {
                             if (isMobile) {
-                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.transform = "scale(1)";
                             }
                           }}
                         >
                           {cellSessions.map(s => (
                             <div
                               key={s.id}
-                              className={`mb-1 rounded text-center text-white font-medium shadow-sm ${
-                                isMobile ? "px-1 py-0.5 text-[10px] leading-tight" : "px-2 py-1 text-xs"
+                              className={`flex flex-1 flex-col justify-center rounded-xs text-center font-medium text-white shadow-sm ${
+                                isMobile
+                                  ? "px-1 py-0.5 text-[10px] leading-tight"
+                                  : "px-2 py-1 text-xs"
                               }`}
                               style={{
                                 backgroundColor:
-                                  courseById.get(s.courseId)?.color || "#6b7280",
+                                  courseById.get(s.courseId)?.color ||
+                                  "#6b7280",
                               }}
                             >
                               <div className="truncate">
-                                {courseById.get(s.courseId)?.title || "未知课程"}
+                                {courseById.get(s.courseId)?.title ||
+                                  "未知课程"}
                               </div>
                               {s.location && !isMobile && (
                                 <div className="truncate text-[10px] opacity-90">
@@ -443,209 +510,226 @@ export default function Home() {
           </table>
         </div>
       </div>{" "}
-      {/* 编辑表单 */}
-      <AnimatePresence>
-        {editingCell && formDefaults && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-            <Card
-              className={`relative bg-white shadow-xl ${
-                isMobile 
-                  ? "modal-mobile m-4 w-[calc(100%-2rem)] max-w-none p-4" 
-                  : "mx-4 w-full max-w-md p-6"
-              }`}
-            >
-              <h3 className={`mb-4 font-semibold ${isMobile ? "text-base" : "text-lg"}`}>
-                {editingCell.session ? "编辑课时" : "添加课时"}
-              </h3>
-              <Form method="post" className="space-y-4">
-                <input type="hidden" name="intent" value="update-cell" />
-                <input type="hidden" name="timetableId" value={timetable.id} />
-                <input type="hidden" name="dayOfWeek" value={formDefaults.dayOfWeek} />
-                <input type="hidden" name="startMinutes" value={formDefaults.startMinutes} />
-                <input type="hidden" name="endMinutes" value={formDefaults.endMinutes} />
-                <input type="hidden" name="color" value={selectedColor} />
-                {editingCell.session && (
-                  <input type="hidden" name="existingSessionId" value={editingCell.session.id} />
-                )}
+      {/* 编辑课时模态框 */}
+      <Dialog
+        open={!!editingCell}
+        onOpenChange={open => {
+          if (!open) {
+            setEditingCell(null);
+            setFormDefaults(null);
+          }
+        }}
+      >
+        <DialogContent
+          className={isMobile ? "w-[calc(100%-2rem)] max-w-none" : "max-w-md"}
+        >
+          <DialogHeader>
+            <DialogTitle className={isMobile ? "text-base" : "text-lg"}>
+              {editingCell?.session ? "编辑课时" : "添加课时"}
+            </DialogTitle>
+          </DialogHeader>
 
-                <div>
-                  <Label htmlFor="title" className={isMobile ? "text-sm" : ""}>
-                    课程名称
-                  </Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    defaultValue={formDefaults.title}
-                    placeholder="请输入课程名称"
-                    required
-                    className={isMobile ? "mt-1" : ""}
-                  />
-                </div>
+          {formDefaults && (
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="intent" value="update-cell" />
+              <input type="hidden" name="timetableId" value={timetable.id} />
+              <input
+                type="hidden"
+                name="dayOfWeek"
+                value={formDefaults.dayOfWeek}
+              />
+              <input
+                type="hidden"
+                name="startMinutes"
+                value={formDefaults.startMinutes}
+              />
+              <input
+                type="hidden"
+                name="endMinutes"
+                value={formDefaults.endMinutes}
+              />
+              <input type="hidden" name="color" value={selectedColor} />
+              {editingCell?.session && (
+                <input
+                  type="hidden"
+                  name="existingSessionId"
+                  value={editingCell.session.id}
+                />
+              )}
 
-                <div>
-                  <Label htmlFor="location" className={isMobile ? "text-sm" : ""}>
-                    上课地点（可选）
-                  </Label>
-                  <Input
-                    id="location"
-                    name="location"
-                    defaultValue={formDefaults.location}
-                    placeholder="请输入上课地点"
-                    className={isMobile ? "mt-1" : ""}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="title" className={isMobile ? "text-sm" : ""}>
+                  课程名称
+                </Label>
+                <Input
+                  id="title"
+                  name="title"
+                  defaultValue={formDefaults.title}
+                  placeholder="请输入课程名称"
+                  required
+                  className={isMobile ? "mt-1" : ""}
+                />
+              </div>
 
-                <div>
-                  <Label className={`block mb-2 ${isMobile ? "text-sm" : ""}`}>
-                    课程颜色
-                  </Label>
-                  <div className={`grid gap-2 ${isMobile ? "grid-cols-6" : "grid-cols-6"}`}>
-                    {[
-                      "#ef4444", "#f97316", "#eab308", "#22c55e",
-                      "#06b6d4", "#3b82f6", "#a855f7", "#ec4899",
-                      "#84cc16", "#f59e0b", "#10b981", "#8b5cf6"
-                    ].map(color => (
-                      <label
-                        key={color}
-                        className={`relative flex cursor-pointer items-center justify-center rounded-full ${
-                          isMobile ? "h-8 w-8" : "h-10 w-10"
-                        }`}
-                        style={{ backgroundColor: color }}
-                      >
-                        <input
-                          type="radio"
-                          name="colorSelection"
-                          value={color}
-                          checked={color === selectedColor}
-                          onChange={e => setSelectedColor(e.target.value)}
-                          className="sr-only"
-                        />
-                        {color === selectedColor && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                            <div
-                              className={`rounded-full bg-gray-700 ${
-                                isMobile ? "h-2 w-2" : "h-2 w-2"
-                              }`}
-                            ></div>
-                          </div>
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="location" className={isMobile ? "text-sm" : ""}>
+                  上课地点（可选）
+                </Label>
+                <Input
+                  id="location"
+                  name="location"
+                  defaultValue={formDefaults.location}
+                  placeholder="请输入上课地点"
+                  className={isMobile ? "mt-1" : ""}
+                />
+              </div>
+
+              <div>
+                <Label className={`mb-2 block ${isMobile ? "text-sm" : ""}`}>
+                  课程颜色
+                </Label>
                 <div
-                  className={`flex justify-between pt-2 ${
-                    isMobile ? "flex-col gap-3" : ""
-                  }`}
+                  className={`grid gap-2 ${isMobile ? "grid-cols-6" : "grid-cols-6"}`}
                 >
-                  <div>
-                    {editingCell.session && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size={isMobile ? "default" : "sm"}
-                        className={isMobile ? "w-full" : ""}
-                        onClick={async () => {
-                          const confirmed = await showConfirm(
-                            "删除课时",
-                            "确定要删除这个课时吗？"
-                          );
-                          if (confirmed) {
-                            // 使用React Router的submit方法
-                            const formData = new FormData();
-                            formData.set("intent", "delete-session");
-                            formData.set("sessionId", editingCell.session!.id);
+                  {[
+                    "#ef4444",
+                    "#f97316",
+                    "#eab308",
+                    "#22c55e",
+                    "#06b6d4",
+                    "#3b82f6",
+                    "#a855f7",
+                    "#ec4899",
+                    "#84cc16",
+                    "#f59e0b",
+                    "#10b981",
+                    "#8b5cf6",
+                  ].map(color => (
+                    <label
+                      key={color}
+                      className={`relative flex cursor-pointer items-center justify-center rounded-full ${
+                        isMobile ? "h-8 w-8" : "h-10 w-10"
+                      }`}
+                      style={{ backgroundColor: color }}
+                    >
+                      <input
+                        type="radio"
+                        name="colorSelection"
+                        value={color}
+                        checked={color === selectedColor}
+                        onChange={e => setSelectedColor(e.target.value)}
+                        className="sr-only"
+                      />
+                      {color === selectedColor && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                          <div
+                            className={`rounded-full bg-gray-700 ${
+                              isMobile ? "h-2 w-2" : "h-2 w-2"
+                            }`}
+                          ></div>
+                        </div>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-                            submit(formData, { method: "post" });
-                            setEditingCell(null);
-                          }
-                        }}
-                      >
-                        删除
-                      </Button>
-                    )}
-                  </div>
-                  <div className={`flex gap-2 ${isMobile ? "" : ""}`}>
+              <DialogFooter className={isMobile ? "flex-col gap-3" : ""}>
+                <div className={isMobile ? "w-full" : ""}>
+                  {editingCell?.session && (
                     <Button
                       type="button"
-                      onClick={() => setEditingCell(null)}
-                      variant="ghost"
+                      variant="destructive"
                       size={isMobile ? "default" : "sm"}
-                      className={isMobile ? "flex-1" : ""}
+                      className={isMobile ? "w-full" : ""}
+                      onClick={async () => {
+                        const confirmed = await showConfirm(
+                          "删除课时",
+                          "确定要删除这个课时吗？"
+                        );
+                        if (confirmed) {
+                          // 使用React Router的submit方法
+                          const formData = new FormData();
+                          formData.set("intent", "delete-session");
+                          formData.set("sessionId", editingCell.session!.id);
+
+                          submit(formData, { method: "post" });
+                          setEditingCell(null);
+                        }
+                      }}
                     >
-                      取消
+                      删除
                     </Button>
-                    <Button 
-                      disabled={busy} 
-                      className={isMobile ? "flex-1" : ""}
-                      size={isMobile ? "default" : "sm"}
-                    >
-                      {editingCell.session ? "更新" : "保存"}
-                    </Button>
-                  </div>
+                  )}
                 </div>
-              </Form>
-            </Card>
-          </div>
-        )}
-      </AnimatePresence>
+                <div className={`flex gap-2 ${isMobile ? "w-full" : ""}`}>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setEditingCell(null);
+                      setFormDefaults(null);
+                    }}
+                    variant="ghost"
+                    size={isMobile ? "default" : "sm"}
+                    className={isMobile ? "flex-1" : ""}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    disabled={busy}
+                    className={isMobile ? "flex-1" : ""}
+                    size={isMobile ? "default" : "sm"}
+                  >
+                    {editingCell?.session ? "更新" : "保存"}
+                  </Button>
+                </div>
+              </DialogFooter>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
       {/* 确认对话框 */}
-      <AnimatePresence>
-        {confirmDialog.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-              className="absolute inset-0 bg-black/50"
+      <Dialog
+        open={confirmDialog.isOpen}
+        onOpenChange={open => {
+          if (!open) {
+            confirmDialog.onCancel();
+          }
+        }}
+      >
+        <DialogContent
+          className={isMobile ? "w-[calc(100%-2rem)] max-w-none" : "max-w-md"}
+        >
+          <DialogHeader>
+            <DialogTitle className={isMobile ? "text-base" : "text-lg"}>
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className={`text-gray-600 ${isMobile ? "text-sm" : ""}`}>
+            {confirmDialog.message}
+          </p>
+
+          <DialogFooter className={isMobile ? "flex-col gap-2" : "justify-end"}>
+            <Button
+              variant="ghost"
               onClick={confirmDialog.onCancel}
-            />
-            <MotionCard
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`relative z-10 bg-white shadow-lg ${
-                isMobile ? "modal-mobile p-4" : "mx-4 max-w-md p-6"
-              }`}
+              size={isMobile ? "default" : "default"}
+              className={isMobile ? "w-full" : ""}
             >
-              <h3
-                className={`mb-2 font-semibold ${
-                  isMobile ? "text-base" : "text-lg"
-                }`}
-              >
-                {confirmDialog.title}
-              </h3>
-              <p
-                className={`mb-6 text-gray-600 ${
-                  isMobile ? "mb-4 text-sm" : ""
-                }`}
-              >
-                {confirmDialog.message}
-              </p>
-              <div
-                className={`flex gap-3 ${
-                  isMobile ? "flex-col gap-2" : "justify-end"
-                }`}
-              >
-                <Button
-                  variant="ghost"
-                  onClick={confirmDialog.onCancel}
-                  size={isMobile ? "default" : "default"}
-                  className={isMobile ? "w-full" : ""}
-                >
-                  取消
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={confirmDialog.onConfirm}
-                  size={isMobile ? "default" : "default"}
-                  className={isMobile ? "w-full" : ""}
-                >
-                  确定
-                </Button>
-              </div>
-            </MotionCard>
-          </div>
-        )}
-      </AnimatePresence>
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDialog.onConfirm}
+              size={isMobile ? "default" : "default"}
+              className={isMobile ? "w-full" : ""}
+            >
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TimetableShell>
   );
 }
