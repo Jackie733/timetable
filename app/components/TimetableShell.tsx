@@ -14,6 +14,7 @@ import {
   useReducedMotion,
   useOriginAwareAnimation,
 } from "../utils/animations";
+import { useMobileDetection } from "../hooks/useMobileDetection";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -34,6 +35,7 @@ export function TimetableShell(props: {
   const nav = useNavigation();
   const busy = nav.state === "submitting";
   const prefersReducedMotion = useReducedMotion();
+  const { isMobile } = useMobileDetection();
   const dataManagerOrigin = useOriginAwareAnimation(
     dataManagerButtonRef as RefObject<HTMLElement>
   );
@@ -48,17 +50,6 @@ export function TimetableShell(props: {
       sessionStorage.setItem("nav-animated", "true");
     }
   }, [hasAnimated]);
-
-  // 检测移动端
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   return (
     <div className="flex min-h-[100svh] flex-col">

@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import type { Route } from "./+types/t.$id.edit-grid";
 import { useLoaderData, Form, useNavigation } from "react-router";
 import { motion } from "motion/react";
@@ -6,6 +5,7 @@ import { db, type Timetable } from "../db";
 import { TimetableShell } from "../components/TimetableShell";
 import { TimePicker } from "../components/TimePicker";
 import { springPresets, useReducedMotion } from "../utils/animations";
+import { useMobileDetection } from "../hooks/useMobileDetection";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -60,19 +60,9 @@ export default function EditGrid() {
   const nav = useNavigation();
   const busy = nav.state === "submitting";
   const prefersReducedMotion = useReducedMotion();
+  const { isMobile } = useMobileDetection();
   const existingSegments = timetable.segments ?? [];
   const segmentsCount = Math.max(existingSegments.length, 6);
-
-  // 检测移动端
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   return (
     <TimetableShell id={timetable.id} title={`${timetable.name}（课表设置）`}>

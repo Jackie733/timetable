@@ -2,6 +2,8 @@ import React from "react";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
+import { useMobileDetection } from "../hooks/useMobileDetection";
+import { TimeUtils } from "../utils/timeUtils";
 
 interface TimePickerProps {
   name: string;
@@ -28,40 +30,16 @@ export function TimePicker({
   placeholder,
   compact = false,
 }: TimePickerProps) {
-  // 将分钟数转换为 HH:mm 格式
-  const minutesToTime = (minutes: number): string => {
-    if (minutes < 0 || minutes > 1439) return "08:00";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-  };
-
-  // 将 HH:mm 格式转换为分钟数
-  const timeToMinutes = (time: string): number => {
-    if (!time) return 0;
-    const [hours, minutes] = time.split(":").map(Number);
-    if (isNaN(hours) || isNaN(minutes)) return 0;
-    return Math.max(0, Math.min(1439, hours * 60 + minutes));
-  };
+  const { isMobile } = useMobileDetection();
 
   const initialTime = React.useMemo(() => {
-    if (value !== undefined) return minutesToTime(value);
-    if (defaultValue !== undefined) return minutesToTime(defaultValue);
+    if (value !== undefined) return TimeUtils.formatMinutes(value);
+    if (defaultValue !== undefined)
+      return TimeUtils.formatMinutes(defaultValue);
     return "08:00";
   }, [value, defaultValue]);
 
   const [timeValue, setTimeValue] = React.useState(initialTime);
-
-  // 检测移动端
-  const [isMobile, setIsMobile] = React.useState(false);
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // 处理时间变化
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +50,12 @@ export function TimePicker({
   return (
     <div className={className}>
       {label && (
-        <Label className={cn(compact ? "py-1 text-xs" : "", isMobile ? "text-sm" : "")}>
+        <Label
+          className={cn(
+            compact ? "py-1 text-xs" : "",
+            isMobile ? "text-sm" : ""
+          )}
+        >
           {label}
         </Label>
       )}
@@ -91,7 +74,11 @@ export function TimePicker({
         placeholder={placeholder}
       />
       {/* 隐藏的输入字段，提交时转换为分钟数 */}
-      <input type="hidden" name={name} value={timeToMinutes(timeValue)} />
+      <input
+        type="hidden"
+        name={name}
+        value={TimeUtils.parseTimeString(timeValue)}
+      />
     </div>
   );
 }
