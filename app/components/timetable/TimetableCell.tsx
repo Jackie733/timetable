@@ -1,5 +1,7 @@
+import { useDroppable } from "@dnd-kit/core";
 import type { Course, Session } from "../../db";
 import { CourseBlock } from "./CourseBlock";
+import { DragDropUtils } from "../../utils/dragDropUtils";
 
 export interface TimetableCellProps {
   dayOfWeek: number;
@@ -13,6 +15,8 @@ export interface TimetableCellProps {
     course?: Course
   ) => void;
   isMobile?: boolean;
+  canDrop?: boolean;
+  isDropTarget?: boolean;
 }
 
 export function TimetableCell({
@@ -22,7 +26,16 @@ export function TimetableCell({
   courseById,
   onCellClick,
   isMobile = false,
+  canDrop = true,
+  isDropTarget = false,
 }: TimetableCellProps) {
+  const dropId = DragDropUtils.createDropId(dayOfWeek, segIndex);
+
+  const { setNodeRef, isOver } = useDroppable({
+    id: dropId,
+    disabled: !canDrop,
+  });
+
   const handleClick = () => {
     const session = sessions[0];
     const course = session ? courseById.get(session.courseId) : undefined;
@@ -44,8 +57,21 @@ export function TimetableCell({
   return (
     <td className="h-full p-0">
       <div
-        className={`touch-action-manipulation flex h-full cursor-pointer flex-col rounded-xs p-0.5 transition-colors hover:bg-gray-50/80 active:bg-gray-100/80 dark:hover:bg-gray-800/50 ${
+        ref={setNodeRef}
+        className={`touch-action-manipulation flex h-full cursor-pointer flex-col rounded-xs p-0.5 transition-colors ${
           isMobile ? "min-h-8" : "min-h-16"
+        } ${
+          sessions.length === 0
+            ? "hover:bg-gray-50/80 active:bg-gray-100/80 dark:hover:bg-gray-800/50"
+            : ""
+        } ${
+          isOver && canDrop
+            ? "border-2 border-dashed border-blue-300 bg-blue-50"
+            : ""
+        } ${
+          isDropTarget && !canDrop
+            ? "border-2 border-dashed border-red-300 bg-red-50"
+            : ""
         }`}
         style={{
           height: "100%",
@@ -60,6 +86,8 @@ export function TimetableCell({
             key={session.id}
             session={session}
             course={courseById.get(session.courseId)}
+            dayOfWeek={dayOfWeek}
+            segIndex={segIndex}
             isMobile={isMobile}
             showLocation={!isMobile}
           />

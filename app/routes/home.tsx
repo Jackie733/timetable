@@ -23,6 +23,7 @@ import { MobileUserGuide } from "../components/MobileUserGuide";
 import { useMobileDetection } from "../hooks/useMobileDetection";
 import { useCourseEditing } from "../hooks/useCourseEditing";
 import { useConfirmDialog } from "../hooks/useConfirmDialog";
+import type { DragSession } from "../utils/dragDropUtils";
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [
@@ -157,6 +158,30 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       await db.sessions.delete(sessionId);
       return { ok: true } as const;
     }
+    if (intent === "move-session") {
+      const sessionId = String(fd.get("sessionId"));
+      const dayOfWeek = Number(fd.get("dayOfWeek"));
+      const startMinutes = Number(fd.get("startMinutes"));
+      const endMinutes = Number(fd.get("endMinutes"));
+
+      if (
+        !sessionId ||
+        dayOfWeek < 0 ||
+        dayOfWeek > 6 ||
+        !(endMinutes > startMinutes)
+      ) {
+        return { ok: false } as const;
+      }
+
+      // 更新会话的时间信息
+      await db.sessions.update(sessionId, {
+        dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        startMinutes,
+        endMinutes,
+      });
+
+      return { ok: true } as const;
+    }
     const name = (fd.get("name") as string) || "未命名课表";
     const type = ((fd.get("type") as string) || "teacher") as TimetableType;
     const id = crypto.randomUUID();
@@ -281,6 +306,22 @@ export default function Home() {
     );
   };
 
+  const handleSessionMove = async (dragSession: DragSession) => {
+    // 根据 DragSession 计算新的时间段
+    const segments = timetable.segments || [];
+    const targetSegment = segments[dragSession.toSegIndex];
+
+    if (!targetSegment) return;
+
+    const formData = new FormData();
+    formData.set("intent", "move-session");
+    formData.set("sessionId", dragSession.session.id);
+    formData.set("dayOfWeek", dragSession.toDayOfWeek.toString());
+    formData.set("startMinutes", targetSegment.startMinutes.toString());
+    formData.set("endMinutes", targetSegment.endMinutes.toString());
+    submit(formData, { method: "post" });
+  };
+
   const handleDeleteSession = async () => {
     if (!editingCell?.session) return;
 
@@ -306,6 +347,7 @@ export default function Home() {
         courses={courses}
         sessions={sessions}
         onCellClick={handleCellClick}
+        onSessionMove={handleSessionMove}
         isMobile={isMobile}
       />
 
