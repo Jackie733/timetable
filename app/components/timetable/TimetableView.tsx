@@ -176,8 +176,8 @@ export function TimetableView({
             <CourseBlock
               session={dragOverlay}
               course={courseById.get(dragOverlay.courseId)}
-              dayOfWeek={0} // 不重要，因为是覆盖层
-              segIndex={0} // 不重要，因为是覆盖层
+              dayOfWeek={0}
+              segIndex={0}
               isMobile={isMobile}
               showLocation={!isMobile}
               isDragDisabled={true}
