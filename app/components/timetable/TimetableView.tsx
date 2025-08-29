@@ -113,7 +113,7 @@ export function TimetableView({
       >
         <div className={`print:h-full ${isMobile ? "min-w-fit" : ""}`}>
           <table
-            className={`table-clean w-full border-separate border-spacing-0 print:h-full ${
+            className={`timetable-grid table-clean w-full border-separate border-spacing-0 print:h-full ${
               isMobile
                 ? "table-ultra-compact text-xs"
                 : "min-w-[720px] table-fixed"

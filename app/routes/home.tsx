@@ -7,6 +7,7 @@ import {
   useNavigate,
   useSubmit,
 } from "react-router";
+import { Lightbulb } from "lucide-react";
 import {
   db,
   type Timetable,
@@ -267,7 +268,7 @@ export default function Home() {
                 点击右上角的"创建课表"按钮开始制作您的第一个课程表
               </p>
               <div className="bg-muted inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm">
-                <span>💡</span>
+                <Lightbulb className="h-4 w-4 text-yellow-500" />
                 <span>支持教师课表和学生课表两种模式</span>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 import {
   db,
   type Timetable,
@@ -686,11 +687,19 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     <>
                       <div className="flex items-center justify-between">
                         <div
-                          className={`font-medium ${integrityResult.isValid ? "text-green-600" : "text-red-600"}`}
+                          className={`font-medium ${integrityResult.isValid ? "text-green-600" : "text-red-600"} flex items-center gap-2`}
                         >
-                          {integrityResult.isValid
-                            ? "✅ 数据完整性良好"
-                            : "⚠️ 发现数据完整性问题"}
+                          {integrityResult.isValid ? (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              数据完整性良好
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-4 w-4" />
+                              发现数据完整性问题
+                            </>
+                          )}
                         </div>
                         <Button
                           variant="secondary"

@@ -1,0 +1,97 @@
+/* 打印预览和测试样式 */
+@media screen {
+  .print-preview-mode {
+    background: white !important;
+    color: black !important;
+    font-family: "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  .print-preview-mode .no-print {
+    display: none !important;
+  }
+
+  .print-preview-mode header,
+  .print-preview-mode .mobile-optimized-message,
+  .print-preview-mode button:not(.print-preview-toggle),
+  .print-preview-mode .btn:not(.print-preview-toggle),
+  .print-preview-mode nav {
+    display: none !important;
+  }
+
+  .print-preview-mode main {
+    margin: 0 !important;
+    padding: 20pt !important;
+    max-width: none !important;
+  }
+
+  .print-preview-mode .print-header {
+    text-align: center !important;
+    margin-bottom: 15pt !important;
+  }
+
+  .print-preview-mode .print-title {
+    font-size: 22pt !important;
+    font-weight: bold !important;
+    color: black !important;
+    margin: 0 0 8pt 0 !important;
+  }
+
+  .print-preview-mode .timetable-grid {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  .print-preview-mode .timetable-grid th,
+  .print-preview-mode .timetable-grid td {
+    border: 1pt solid #333 !important;
+    padding: 4pt !important;
+    font-size: 10pt !important;
+    vertical-align: top !important;
+    background: white !important;
+  }
+
+  .print-preview-mode .timetable-grid th {
+    background: #f8f9fa !important;
+    font-weight: bold !important;
+    text-align: center !important;
+  }
+
+  .print-preview-mode .session-cell {
+    background: #f0f0f0 !important;
+    border: 1pt solid #333 !important;
+    padding: 4pt !important;
+    font-size: 9pt !important;
+    line-height: 1.2 !important;
+  }
+
+  .print-preview-mode .session-title {
+    font-weight: bold !important;
+    color: black !important;
+    margin-bottom: 2pt !important;
+  }
+
+  .print-preview-mode .session-location {
+    color: #555 !important;
+    font-size: 8pt !important;
+  }
+}
+
+/* 打印预览按钮 */
+.print-preview-toggle {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+  background: #007bff !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 15px !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+.print-preview-toggle:hover {
+  background: #0056b3 !important;
+}

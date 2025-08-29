@@ -1,0 +1,281 @@
+/* 课表打印样式 */
+@media print {
+  /* 页面设置 */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 10mm 15mm 10mm;
+  }
+
+  /* 重置基础样式 */
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    text-shadow: none !important;
+  }
+
+  /* 隐藏不需要打印的元素 */
+  header,
+  .no-print,
+  button,
+  .btn,
+  nav,
+  .mobile-optimized-message,
+  .mobile-menu,
+  .sidebar,
+  .print-preview-toggle {
+    display: none !important;
+  }
+
+  /* 页面基础样式 */
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+    font-family: "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 12pt !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* 主容器 */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* 课表标题样式 */
+  .print-header {
+    text-align: center !important;
+    margin-bottom: 10pt !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .print-title {
+    font-size: 18pt !important;
+    font-weight: bold !important;
+    color: black !important;
+    margin: 0 0 5pt 0 !important;
+    line-height: 1.2 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .print-subtitle {
+    font-size: 11pt !important;
+    color: #666 !important;
+    margin: 0 0 10pt 0 !important;
+    font-weight: normal !important;
+  }
+
+  /* 课表网格容器 - 确保和标题在同一页 */
+  .print-timetable-container {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 确保整个课表内容在一页内 */
+  .print-keep-together {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    max-height: 90vh !important;
+    overflow: hidden !important;
+  }
+
+  /* 课表网格 */
+  .timetable-grid {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    table-layout: fixed !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    font-size: 9pt !important;
+  }
+
+  /* 表头样式 */
+  .timetable-grid thead th {
+    background: #f8f9fa !important;
+    border: 1.2pt solid #333 !important;
+    padding: 6pt 3pt !important;
+    font-size: 10pt !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    color: black !important;
+    vertical-align: middle !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 时间列样式 */
+  .timetable-grid tbody th {
+    background: #f8f9fa !important;
+    border: 1pt solid #666 !important;
+    padding: 4pt 2pt !important;
+    font-size: 9pt !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    color: black !important;
+    vertical-align: middle !important;
+    width: 60pt !important;
+    max-width: 60pt !important;
+  }
+
+  /* 普通单元格 */
+  .timetable-grid tbody td {
+    border: 1pt solid #666 !important;
+    padding: 1pt !important;
+    vertical-align: top !important;
+    height: 40pt !important;
+    min-height: 40pt !important;
+    max-height: 40pt !important;
+    background: white !important;
+    overflow: hidden !important;
+  }
+
+  /* 课程块样式 */
+  .session-cell {
+    background: #f0f0f0 !important;
+    border: 1pt solid #333 !important;
+    padding: 2pt !important;
+    font-size: 8pt !important;
+    line-height: 1.1 !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    text-align: center !important;
+    overflow: hidden !important;
+  }
+
+  /* 课程标题 */
+  .session-title {
+    font-weight: bold !important;
+    color: black !important;
+    margin-bottom: 1pt !important;
+    font-size: 8pt !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* 课程地点 */
+  .session-location {
+    color: #555 !important;
+    font-size: 7pt !important;
+    font-weight: normal !important;
+    line-height: 1 !important;
+    margin-top: 1pt !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* 空白单元格 */
+  .empty-cell {
+    background: white !important;
+    border: 1pt solid #ccc !important;
+  }
+
+  /* 防止分页的元素 */
+  .print-no-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 强制分页 */
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* 移除不必要的间距 */
+  .container,
+  .flex,
+  .space-y-4,
+  .space-y-2,
+  .gap-2,
+  .gap-4 {
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* 确保表格占满可用空间但不溢出 */
+  .timetable-grid tbody {
+    height: auto !important;
+  }
+
+  .timetable-grid tbody tr {
+    height: 40pt !important;
+    min-height: 40pt !important;
+    max-height: 40pt !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 移动端滚动容器在打印时隐藏 */
+  .mobile-scroll-container {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* 确保移动端表格在打印时正常显示 */
+  .table-ultra-compact {
+    font-size: 8pt !important;
+  }
+
+  .table-ultra-compact th,
+  .table-ultra-compact td {
+    padding: 2pt 1pt !important;
+    height: 35pt !important;
+    min-height: 35pt !important;
+    max-height: 35pt !important;
+  }
+
+  /* 打印时添加日期信息 */
+  .print-header::after {
+    content: "打印日期: " attr(data-print-date);
+    display: block;
+    font-size: 9pt;
+    color: #999;
+    margin-top: 5pt;
+  }
+}
+
+/* 打印预览优化 */
+@media screen {
+  .print-preview {
+    background: white;
+    color: black;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 210mm;
+    min-height: 297mm;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .print-preview .timetable-grid {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .print-preview .timetable-grid th,
+  .print-preview .timetable-grid td {
+    border: 1px solid #666;
+    padding: 8px 4px;
+  }
+}

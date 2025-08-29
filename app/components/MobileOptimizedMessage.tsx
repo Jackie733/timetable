@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Smartphone } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { useMobileDetection } from "../hooks/useMobileDetection";
@@ -25,7 +26,7 @@ export function MobileOptimizedMessage() {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed right-4 bottom-4 left-4 z-50"
+        className="mobile-optimized-message fixed right-4 bottom-4 left-4 z-50"
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
@@ -33,7 +34,9 @@ export function MobileOptimizedMessage() {
       >
         <Card className="border-blue-200 bg-blue-50 p-4 shadow-lg">
           <div className="flex items-start gap-3">
-            <div className="text-2xl">📱</div>
+            <div className="text-2xl">
+              <Smartphone className="h-6 w-6 text-blue-600" />
+            </div>
             <div className="flex-1">
               <h3 className="mb-1 font-medium text-blue-900">移动端优化提示</h3>
               <p className="mb-3 text-sm text-blue-700">

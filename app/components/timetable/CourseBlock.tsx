@@ -47,7 +47,7 @@ export function CourseBlock({
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-1 flex-col justify-center rounded-xs text-center font-medium text-white shadow-sm transition-all ${
+      className={`session-cell relative flex flex-1 flex-col justify-center rounded-xs text-center font-medium text-white shadow-sm transition-all ${
         isMobile ? "px-1 py-0.5 text-[10px] leading-tight" : "px-2 py-1 text-xs"
       } ${isDragging ? "opacity-50 shadow-lg" : "cursor-pointer"} ${
         !isDragDisabled && !isMobile ? "hover:shadow-md active:scale-95" : ""
@@ -57,16 +57,19 @@ export function CourseBlock({
       {...attributes}
       {...listeners}
     >
-      <div className="truncate" title={title}>
+      <div className="session-title truncate" title={title}>
         {title}
       </div>
       {location && showLocation && !isMobile && (
-        <div className="truncate text-[10px] opacity-90" title={location}>
+        <div
+          className="session-location truncate text-[10px] opacity-90"
+          title={location}
+        >
           {location}
         </div>
       )}
       {!isDragDisabled && !isMobile && (
-        <div className="absolute top-0 right-0 opacity-0 transition-opacity hover:opacity-100">
+        <div className="no-print absolute top-0 right-0 opacity-0 transition-opacity hover:opacity-100">
           <svg
             className="h-3 w-3 text-white/70"
             fill="currentColor"

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Link, NavLink, Form, useNavigation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
+import { Printer, Eye, Settings, Home, Menu } from "lucide-react";
 import DataManager from "./DataManager";
 import {
   springPresets,
@@ -31,6 +32,7 @@ export function TimetableShell(props: {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDataManager, setShowDataManager] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isPrintPreview, setIsPrintPreview] = useState(false);
   const dataManagerButtonRef = useRef<HTMLButtonElement>(null);
   const nav = useNavigation();
   const busy = nav.state === "submitting";
@@ -45,6 +47,17 @@ export function TimetableShell(props: {
     return sessionStorage.getItem("nav-animated") === "true";
   }, []);
 
+  // 打印函数
+  const handlePrint = () => {
+    // 设置打印日期
+    const printDate = new Date().toLocaleDateString("zh-CN");
+    const printHeader = document.querySelector(".print-header");
+    if (printHeader) {
+      printHeader.setAttribute("data-print-date", printDate);
+    }
+    window.print();
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined" && !hasAnimated) {
       sessionStorage.setItem("nav-animated", "true");
@@ -52,7 +65,17 @@ export function TimetableShell(props: {
   }, [hasAnimated]);
 
   return (
-    <div className="flex min-h-[100svh] flex-col">
+    <div
+      className={`flex min-h-[100svh] flex-col ${isPrintPreview ? "print-preview-mode" : ""}`}
+    >
+      {isPrintPreview && (
+        <button
+          className="print-preview-toggle"
+          onClick={() => setIsPrintPreview(false)}
+        >
+          退出打印预览
+        </button>
+      )}
       <header
         className={`bg-background/95 sticky top-0 z-10 border-b backdrop-blur ${isMobile ? "header-landscape" : ""}`}
       >
@@ -135,40 +158,64 @@ export function TimetableShell(props: {
                     onClick={() => setShowMobileMenu(!showMobileMenu)}
                     className="p-2"
                   >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    </svg>
+                    <Menu className="h-5 w-5" />
                   </Button>
                 )}
 
                 {!isMobile && (
-                  <motion.button
-                    ref={dataManagerButtonRef}
-                    onClick={() => setShowDataManager(true)}
-                    className="btn btn-ghost text-sm"
-                    title="数据管理"
-                    whileHover={
-                      prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }
-                    }
-                    whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
-                    initial={hasAnimated ? false : { opacity: 0, scale: 0.8 }}
-                    animate={hasAnimated ? false : { opacity: 1, scale: 1 }}
-                    transition={
-                      hasAnimated ? {} : { ...springPresets.snappy, delay: 0.4 }
-                    }
-                  >
-                    🛠️
-                  </motion.button>
+                  <>
+                    <motion.button
+                      onClick={handlePrint}
+                      className="btn btn-ghost text-sm"
+                      title="打印课表"
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+                      initial={hasAnimated ? false : { opacity: 0, scale: 0.8 }}
+                      animate={hasAnimated ? false : { opacity: 1, scale: 1 }}
+                      transition={
+                        hasAnimated
+                          ? {}
+                          : { ...springPresets.snappy, delay: 0.3 }
+                      }
+                    >
+                      <Printer className="h-4 w-4" />
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setIsPrintPreview(!isPrintPreview)}
+                      className="btn btn-ghost text-sm"
+                      title="打印预览"
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+                      initial={hasAnimated ? false : { opacity: 0, scale: 0.8 }}
+                      animate={hasAnimated ? false : { opacity: 1, scale: 1 }}
+                      transition={
+                        hasAnimated
+                          ? {}
+                          : { ...springPresets.snappy, delay: 0.35 }
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                    </motion.button>
+                    <motion.button
+                      ref={dataManagerButtonRef}
+                      onClick={() => setShowDataManager(true)}
+                      className="btn btn-ghost text-sm"
+                      title="数据管理"
+                      whileHover={
+                        prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }
+                      }
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+                      initial={hasAnimated ? false : { opacity: 0, scale: 0.8 }}
+                      animate={hasAnimated ? false : { opacity: 1, scale: 1 }}
+                      transition={
+                        hasAnimated
+                          ? {}
+                          : { ...springPresets.snappy, delay: 0.4 }
+                      }
+                    >
+                      <Settings className="h-4 w-4" />
+                    </motion.button>
+                  </>
                 )}
               </>
             )}
@@ -194,7 +241,8 @@ export function TimetableShell(props: {
                   }
                   onClick={() => setShowMobileMenu(false)}
                 >
-                  🏠 主页面
+                  <Home className="mr-2 h-4 w-4" />
+                  主页面
                 </NavLink>
                 <NavLink
                   to={`/t/${id}/edit-grid`}
@@ -203,8 +251,29 @@ export function TimetableShell(props: {
                   }
                   onClick={() => setShowMobileMenu(false)}
                 >
-                  ⚙️ 课表设置
+                  <Settings className="mr-2 h-4 w-4" />
+                  课表设置
                 </NavLink>
+                <button
+                  onClick={() => {
+                    handlePrint();
+                    setShowMobileMenu(false);
+                  }}
+                  className="nav-link justify-start"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  打印课表
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPrintPreview(!isPrintPreview);
+                    setShowMobileMenu(false);
+                  }}
+                  className="nav-link justify-start"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  打印预览
+                </button>
                 <button
                   onClick={() => {
                     setShowDataManager(true);
@@ -212,7 +281,8 @@ export function TimetableShell(props: {
                   }}
                   className="nav-link justify-start"
                 >
-                  🛠️ 数据管理
+                  <Settings className="mr-2 h-4 w-4" />
+                  数据管理
                 </button>
               </nav>
             </motion.div>
@@ -221,10 +291,16 @@ export function TimetableShell(props: {
       </header>
 
       <main className="container mx-auto flex-1 px-2 py-4 sm:px-4 sm:py-6">
-        {title && (
-          <h1 className="mb-4 text-lg font-semibold sm:text-xl">{title}</h1>
-        )}
-        {children}
+        <div className="print-keep-together">
+          {title && (
+            <div className="print-header">
+              <h1 className="print-title mb-4 text-lg font-semibold sm:text-xl">
+                {title}
+              </h1>
+            </div>
+          )}
+          <div className="print-timetable-container">{children}</div>
+        </div>
       </main>
 
       {/* Create Modal */}
