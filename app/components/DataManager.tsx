@@ -2,6 +2,9 @@ import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   db,
   type Timetable,
@@ -25,8 +28,29 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
 
 const MotionButton = motion.create(Button);
+
+const inputDialogSchema = z.object({
+  inputValue: z.string().min(1, {
+    message: "输入内容不能为空",
+  }),
+});
 
 type TabType = "backup" | "integrity" | "cleanup" | "deleted" | "batch";
 
@@ -62,6 +86,84 @@ interface InputDialog {
   defaultValue?: string;
   onConfirm: (value: string) => void;
   onCancel: () => void;
+}
+
+function InputDialogContent({
+  inputDialog,
+  isMobile,
+}: {
+  inputDialog: InputDialog;
+  isMobile: boolean;
+}) {
+  const form = useForm<z.infer<typeof inputDialogSchema>>({
+    resolver: zodResolver(inputDialogSchema),
+    defaultValues: {
+      inputValue: inputDialog.defaultValue || "",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof inputDialogSchema>) {
+    inputDialog.onConfirm(values.inputValue.trim());
+  }
+
+  return (
+    <motion.div
+      className={`bg-background border-border w-full rounded-lg border p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={springPresets.default}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="mb-4">
+            <h3
+              className={`text-foreground font-medium ${isMobile ? "text-base" : "text-lg"}`}
+            >
+              {inputDialog.title}
+            </h3>
+            <div className="mt-3">
+              <FormField
+                control={form.control}
+                name="inputValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      请输入内容
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={inputDialog.placeholder}
+                        className={`mt-1 ${isMobile ? "text-base" : ""}`}
+                        autoFocus
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+          <div
+            className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={inputDialog.onCancel}
+              className={isMobile ? "w-full" : ""}
+            >
+              取消
+            </Button>
+            <Button type="submit" className={isMobile ? "w-full" : ""}>
+              确定
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </motion.div>
+  );
 }
 
 export default function DataManager({ onClose }: { onClose: () => void }) {
@@ -930,21 +1032,28 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
                     <CardContent className="pt-6">
                       <div className="space-y-2">
                         <Label htmlFor="timetable-select">选择课表:</Label>
-                        <select
-                          id="timetable-select"
+                        <Select
                           value={selectedTimetableId}
-                          onChange={e => setSelectedTimetableId(e.target.value)}
-                          className={`border-input placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                            isMobile ? "h-10 text-base" : "h-9"
-                          }`}
+                          onValueChange={setSelectedTimetableId}
                         >
-                          <option value="">请选择课表</option>
-                          {availableTimetables.map(timetable => (
-                            <option key={timetable.id} value={timetable.id}>
-                              {timetable.name}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            id="timetable-select"
+                            className={`${isMobile ? "h-10 text-base" : "h-9"}`}
+                            size={isMobile ? "default" : "default"}
+                          >
+                            <SelectValue placeholder="请选择课表" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableTimetables.map(timetable => (
+                              <SelectItem
+                                key={timetable.id}
+                                value={timetable.id}
+                              >
+                                {timetable.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </CardContent>
                   </Card>
@@ -1143,61 +1252,7 @@ export default function DataManager({ onClose }: { onClose: () => void }) {
               if (e.target === e.currentTarget) inputDialog.onCancel();
             }}
           >
-            <motion.div
-              className={`bg-background border-border w-full rounded-lg border p-4 ${isMobile ? "modal-mobile" : "max-w-md"}`}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={springPresets.default}
-            >
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const value = formData.get("inputValue") as string;
-                  if (value.trim()) {
-                    inputDialog.onConfirm(value.trim());
-                  }
-                }}
-              >
-                <div className="mb-4">
-                  <h3
-                    className={`text-foreground font-medium ${isMobile ? "text-base" : "text-lg"}`}
-                  >
-                    {inputDialog.title}
-                  </h3>
-                  <div className="mt-3">
-                    <Label htmlFor="inputValue" className="text-foreground">
-                      请输入内容
-                    </Label>
-                    <Input
-                      id="inputValue"
-                      name="inputValue"
-                      placeholder={inputDialog.placeholder}
-                      defaultValue={inputDialog.defaultValue}
-                      className={`mt-1 ${isMobile ? "text-base" : ""}`}
-                      autoFocus
-                      required
-                    />
-                  </div>
-                </div>
-                <div
-                  className={`flex gap-2 ${isMobile ? "flex-col" : "justify-end"}`}
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={inputDialog.onCancel}
-                    className={isMobile ? "w-full" : ""}
-                  >
-                    取消
-                  </Button>
-                  <Button type="submit" className={isMobile ? "w-full" : ""}>
-                    确定
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
+            <InputDialogContent inputDialog={inputDialog} isMobile={isMobile} />
           </motion.div>
         )}
       </AnimatePresence>

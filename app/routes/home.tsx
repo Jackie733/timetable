@@ -252,10 +252,13 @@ export default function Home() {
     }
   }, [isMobile, data.timetables.length]);
 
-  if (actionData?.ok && actionData.id && nav.state === "idle") {
-    // After creating a timetable, take user to edit page
-    navigate(`/t/${actionData.id}/edit-grid`, { replace: true });
-  }
+  // Handle navigation after timetable creation
+  useEffect(() => {
+    if (actionData?.ok && actionData.id && nav.state === "idle") {
+      // After creating a timetable, take user to edit page
+      navigate(`/t/${actionData.id}/edit-grid`, { replace: true });
+    }
+  }, [actionData, nav.state, navigate]);
 
   if (!data.timetables.length) {
     return (
@@ -308,7 +311,6 @@ export default function Home() {
   };
 
   const handleSessionMove = async (dragSession: DragSession) => {
-    // 根据 DragSession 计算新的时间段
     const segments = timetable.segments || [];
     const targetSegment = segments[dragSession.toSegIndex];
 
