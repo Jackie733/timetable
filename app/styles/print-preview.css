@@ -44,7 +44,7 @@
 
   .print-preview-mode .timetable-grid th,
   .print-preview-mode .timetable-grid td {
-    border: 1pt solid #333 !important;
+    border: 1pt solid #ddd !important;
     padding: 4pt !important;
     font-size: 10pt !important;
     vertical-align: top !important;
@@ -55,24 +55,27 @@
     background: #f8f9fa !important;
     font-weight: bold !important;
     text-align: center !important;
+    color: #333 !important;
   }
 
+  /* 预览模式下保持课程块的原有颜色 */
   .print-preview-mode .session-cell {
-    background: #f0f0f0 !important;
-    border: 1pt solid #333 !important;
+    /* 不强制覆盖背景色，保持原有的课程颜色 */
+    border: 1pt solid rgba(0, 0, 0, 0.3) !important;
     padding: 4pt !important;
     font-size: 9pt !important;
     line-height: 1.2 !important;
+    border-radius: 4pt !important;
   }
 
   .print-preview-mode .session-title {
     font-weight: bold !important;
-    color: black !important;
+    color: white !important;
     margin-bottom: 2pt !important;
   }
 
   .print-preview-mode .session-location {
-    color: #555 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
     font-size: 8pt !important;
   }
 }

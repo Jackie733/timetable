@@ -569,6 +569,22 @@ body {
     margin: 12mm;
   }
 
+  html,
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .timetable-grid {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .session-cell {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .print\:hidden {
     display: none !important;
   }
@@ -583,6 +599,52 @@ body {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  /* Optimize table borders for print */
+  table,
+  th,
+  td {
+    border-color: #ddd !important;
+  }
+
+  /* Ensure white text on colored backgrounds in print */
+  .session-cell .session-title {
+    color: white !important;
+  }
+
+  .session-cell .session-location {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+}
+
+/* Print Preview Mode - maintain color consistency */
+.print-preview-mode {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.print-preview-mode .timetable-grid {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.print-preview-mode .session-cell {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.print-preview-mode table,
+.print-preview-mode th,
+.print-preview-mode td {
+  border-color: #ddd !important;
+}
+
+.print-preview-mode .session-cell .session-title {
+  color: white !important;
+}
+
+.print-preview-mode .session-cell .session-location {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 @theme inline {

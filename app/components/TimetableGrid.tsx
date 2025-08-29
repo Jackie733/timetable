@@ -38,7 +38,7 @@ export function TimetableGrid({
   return (
     <div className="w-full overflow-x-auto">
       <div
-        className="grid"
+        className="timetable-grid grid"
         style={{ gridTemplateColumns: `80px repeat(7, minmax(0, 1fr))` }}
       >
         <div />
@@ -112,12 +112,18 @@ export function TimetableGrid({
                         }
                   }
                 >
-                  <div className="pointer-events-auto h-full rounded border bg-blue-50 p-1 text-xs transition-shadow hover:shadow-md dark:bg-blue-950/30">
-                    <div className="truncate font-medium">
+                  <div
+                    className="session-cell pointer-events-auto h-full rounded border p-1 text-xs transition-shadow hover:shadow-md"
+                    style={{
+                      backgroundColor: course?.color || "#3b82f6",
+                      borderColor: "rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <div className="session-title truncate font-medium text-white">
                       {course?.title ?? "课程"}
                     </div>
                     {s.location && (
-                      <div className="truncate text-[10px] text-gray-600">
+                      <div className="session-location truncate text-[10px] text-white/90">
                         {s.location}
                       </div>
                     )}

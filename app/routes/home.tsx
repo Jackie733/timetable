@@ -14,17 +14,17 @@ import {
   type TimetableType,
   type Course,
   type Session,
-} from "../db";
-import { TimetableShell } from "../components/TimetableShell";
-import { TimetableView } from "../components/timetable/TimetableView";
-import { CourseEditForm } from "../components/timetable/CourseEditForm";
-import { ConfirmDialog } from "../components/common/ConfirmDialog";
-import { MobileOptimizedMessage } from "../components/MobileOptimizedMessage";
-import { MobileUserGuide } from "../components/MobileUserGuide";
-import { useMobileDetection } from "../hooks/useMobileDetection";
-import { useCourseEditing } from "../hooks/useCourseEditing";
-import { useConfirmDialog } from "../hooks/useConfirmDialog";
-import type { DragSession } from "../utils/dragDropUtils";
+} from "~/db";
+import { TimetableShell } from "~/components/TimetableShell";
+import { TimetableView } from "~/components/timetable/TimetableView";
+import { CourseEditForm } from "~/components/timetable/CourseEditForm";
+import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { MobileOptimizedMessage } from "~/components/MobileOptimizedMessage";
+import { MobileUserGuide } from "~/components/MobileUserGuide";
+import { useMobileDetection } from "~/hooks/useMobileDetection";
+import { useCourseEditing } from "~/hooks/useCourseEditing";
+import { useConfirmDialog } from "~/hooks/useConfirmDialog";
+import type { DragSession } from "~/utils/dragDropUtils";
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [

@@ -38,6 +38,8 @@
     padding: 0 !important;
     height: auto !important;
     overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* 主容器 */
@@ -101,17 +103,19 @@
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     font-size: 9pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* 表头样式 */
   .timetable-grid thead th {
     background: #f8f9fa !important;
-    border: 1.2pt solid #333 !important;
+    border: 1pt solid #ddd !important;
     padding: 6pt 3pt !important;
     font-size: 10pt !important;
     font-weight: bold !important;
     text-align: center !important;
-    color: black !important;
+    color: #333 !important;
     vertical-align: middle !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -120,12 +124,12 @@
   /* 时间列样式 */
   .timetable-grid tbody th {
     background: #f8f9fa !important;
-    border: 1pt solid #666 !important;
+    border: 1pt solid #ddd !important;
     padding: 4pt 2pt !important;
     font-size: 9pt !important;
     font-weight: bold !important;
     text-align: center !important;
-    color: black !important;
+    color: #333 !important;
     vertical-align: middle !important;
     width: 60pt !important;
     max-width: 60pt !important;
@@ -133,7 +137,7 @@
 
   /* 普通单元格 */
   .timetable-grid tbody td {
-    border: 1pt solid #666 !important;
+    border: 1pt solid #ddd !important;
     padding: 1pt !important;
     vertical-align: top !important;
     height: 40pt !important;
@@ -143,10 +147,10 @@
     overflow: hidden !important;
   }
 
-  /* 课程块样式 */
+  /* 课程块样式 - 保持原有颜色 */
   .session-cell {
-    background: #f0f0f0 !important;
-    border: 1pt solid #333 !important;
+    /* 不强制覆盖背景色，保持原有的课程颜色 */
+    border: 1pt solid rgba(0, 0, 0, 0.3) !important;
     padding: 2pt !important;
     font-size: 8pt !important;
     line-height: 1.1 !important;
@@ -157,12 +161,15 @@
     justify-content: center !important;
     text-align: center !important;
     overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    border-radius: 4pt !important;
   }
 
-  /* 课程标题 */
+  /* 课程标题 - 保持白色文字以确保对比度 */
   .session-title {
     font-weight: bold !important;
-    color: black !important;
+    color: white !important;
     margin-bottom: 1pt !important;
     font-size: 8pt !important;
     line-height: 1 !important;
@@ -171,9 +178,9 @@
     white-space: nowrap !important;
   }
 
-  /* 课程地点 */
+  /* 课程地点 - 保持白色文字以确保对比度 */
   .session-location {
-    color: #555 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
     font-size: 7pt !important;
     font-weight: normal !important;
     line-height: 1 !important;
@@ -275,7 +282,13 @@
 
   .print-preview .timetable-grid th,
   .print-preview .timetable-grid td {
-    border: 1px solid #666;
+    border: 1px solid #ddd;
     padding: 8px 4px;
+  }
+
+  /* 预览模式下也保持课程颜色 */
+  .print-preview .session-cell {
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
   }
 }
