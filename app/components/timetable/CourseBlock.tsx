@@ -49,7 +49,7 @@ export function CourseBlock({
       ref={setNodeRef}
       className={`session-cell relative flex flex-1 flex-col justify-center rounded-xs text-center font-medium text-white shadow-sm transition-all ${
         isMobile ? "px-1 py-0.5 text-[10px] leading-tight" : "px-2 py-1 text-xs"
-      } ${isDragging ? "opacity-50 shadow-lg" : "cursor-pointer"} ${
+      } ${isDragging ? "opacity-0" : "cursor-pointer"} ${
         !isDragDisabled && !isMobile ? "hover:shadow-md active:scale-95" : ""
       } ${className}`}
       style={{ backgroundColor, ...style }}

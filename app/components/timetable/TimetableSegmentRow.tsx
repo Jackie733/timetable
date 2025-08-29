@@ -17,7 +17,7 @@ export function TimetableSegmentRow({
   return (
     <tr key={segIndex}>
       <td
-        className={`sticky-col bg-background text-center align-top ${
+        className={`sticky-col bg-background border-r border-gray-200 text-center align-top dark:border-gray-700 ${
           isMobile ? "p-1" : "p-2"
         }`}
       >

@@ -78,6 +78,26 @@
     color: rgba(255, 255, 255, 0.9) !important;
     font-size: 8pt !important;
   }
+
+  /* 确保打印预览模式下课程颜色正确显示 */
+  .print-preview-mode {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-preview-mode .timetable-grid,
+  .print-preview-mode .session-cell {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-preview-mode .session-cell .session-title {
+    color: white !important;
+  }
+
+  .print-preview-mode .session-cell .session-location {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
 }
 
 /* 打印预览按钮 */

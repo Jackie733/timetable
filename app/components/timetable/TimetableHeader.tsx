@@ -1,4 +1,4 @@
-import type { Timetable } from "../../db";
+import type { Timetable } from "~/db";
 
 export interface TimetableHeaderProps {
   timetable: Timetable;
@@ -20,11 +20,10 @@ export function TimetableHeader({
   isMobile = false,
 }: TimetableHeaderProps) {
   const days = timetable.days ?? 5;
-  const weekStart = timetable.weekStart ?? 1; // 1 = Monday
+  const weekStart = timetable.weekStart ?? 1;
 
-  // 根据周开始日计算要显示的天数
   const displayDays = Array.from({ length: days }, (_, i) => {
-    const dayIndex = weekStart === 1 ? (i + 1) % 7 : i; // 如果周一开始，则调整索引
+    const dayIndex = weekStart === 1 ? (i + 1) % 7 : i;
     return DAY_LABELS[dayIndex];
   });
 
@@ -32,7 +31,7 @@ export function TimetableHeader({
     <thead>
       <tr>
         <th
-          className={`sticky-col text-center align-middle ${
+          className={`sticky-col border-r border-b border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${
             isMobile ? "w-10 p-1 text-xs" : "w-20 p-2"
           }`}
         >
@@ -41,9 +40,9 @@ export function TimetableHeader({
         {displayDays.map((dayLabel, i) => (
           <th
             key={i}
-            className={`text-center align-middle ${
-              isMobile ? "w-16 p-1 text-xs" : "p-2"
-            }`}
+            className={`border-b border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${
+              i < displayDays.length - 1 ? "border-r" : ""
+            } ${isMobile ? "w-16 p-1 text-xs" : "p-2"}`}
           >
             {isMobile ? dayLabel.replace("星期", "") : dayLabel}
           </th>

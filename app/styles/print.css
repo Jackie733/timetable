@@ -260,6 +260,21 @@
     color: #999;
     margin-top: 5pt;
   }
+
+  /* 确保课程颜色在打印时正确显示 */
+  .timetable-grid,
+  .session-cell {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .session-cell .session-title {
+    color: white !important;
+  }
+
+  .session-cell .session-location {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
 }
 
 /* 打印预览优化 */

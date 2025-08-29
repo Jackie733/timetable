@@ -64,9 +64,13 @@ export function AppHeader({
       >
         <div className="container mx-auto flex items-center justify-between px-2 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center gap-2">
-            <Link to="/" className="hero-title font-semibold tracking-tight">
+            <Link to="/" className="text-lg font-semibold tracking-tight">
               Timetable
-              {!isMobile && <span className="hero-subtitle ml-2">课程表</span>}
+              {!isMobile && (
+                <span className="text-muted-foreground ml-2 text-xs">
+                  课程表
+                </span>
+              )}
             </Link>
           </div>
 
@@ -145,7 +149,7 @@ export function AppHeader({
                   <>
                     <motion.button
                       onClick={onPrintClick}
-                      className="btn btn-ghost text-sm"
+                      className="text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md bg-transparent px-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       title="打印课表"
                       whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                       whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
@@ -161,7 +165,7 @@ export function AppHeader({
                     </motion.button>
                     <motion.button
                       onClick={onPrintPreviewClick}
-                      className="btn btn-ghost text-sm"
+                      className="text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md bg-transparent px-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       title="打印预览"
                       whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                       whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
@@ -177,7 +181,7 @@ export function AppHeader({
                     </motion.button>
                     <motion.button
                       onClick={onDataManagerClick}
-                      className="btn btn-ghost text-sm"
+                      className="text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md bg-transparent px-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       title="数据管理"
                       whileHover={
                         prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }

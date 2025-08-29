@@ -113,7 +113,7 @@ export function TimetableView({
       >
         <div className={`print:h-full ${isMobile ? "min-w-fit" : ""}`}>
           <table
-            className={`timetable-grid table-clean w-full border-separate border-spacing-0 print:h-full ${
+            className={`timetable-grid w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 print:h-full ${
               isMobile
                 ? "table-ultra-compact text-xs"
                 : "min-w-[720px] table-fixed"
@@ -164,16 +164,26 @@ export function TimetableView({
 
       <DragOverlay>
         {dragOverlay ? (
-          <CourseBlock
-            session={dragOverlay}
-            course={courseById.get(dragOverlay.courseId)}
-            dayOfWeek={0} // 不重要，因为是覆盖层
-            segIndex={0} // 不重要，因为是覆盖层
-            isMobile={isMobile}
-            showLocation={!isMobile}
-            isDragDisabled={true}
-            className="opacity-90 shadow-xl"
-          />
+          <div
+            className={`flex flex-col p-0.5 ${
+              isMobile ? "w-16" : "min-w-[120px]"
+            }`}
+            style={{
+              minHeight: isMobile ? "2rem" : "4rem",
+              height: isMobile ? "2rem" : "4rem",
+            }}
+          >
+            <CourseBlock
+              session={dragOverlay}
+              course={courseById.get(dragOverlay.courseId)}
+              dayOfWeek={0} // 不重要，因为是覆盖层
+              segIndex={0} // 不重要，因为是覆盖层
+              isMobile={isMobile}
+              showLocation={!isMobile}
+              isDragDisabled={true}
+              className="shadow-2xl ring-2 ring-white/50"
+            />
+          </div>
         ) : null}
       </DragOverlay>
     </DndContext>
