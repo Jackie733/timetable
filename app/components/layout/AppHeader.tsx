@@ -58,7 +58,7 @@ export function AppHeader({
       )}
 
       <header
-        className={`bg-background/95 sticky top-0 z-10 border-b backdrop-blur ${
+        className={`bg-background/95 sticky top-0 z-10 shadow ${
           isMobile ? "header-landscape" : ""
         }`}
       >

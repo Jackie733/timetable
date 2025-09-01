@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
-import type { Course, Session } from "../../db";
 import { CourseBlock } from "./CourseBlock";
-import { DragDropUtils } from "../../utils/dragDropUtils";
+import type { Course, Session } from "~/db";
+import { DragDropUtils } from "~/utils/dragDropUtils";
 
 export interface TimetableCellProps {
   dayOfWeek: number;

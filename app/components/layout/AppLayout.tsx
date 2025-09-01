@@ -96,7 +96,9 @@ export function AppLayout({
               </h1>
             </div>
           )}
-          <div className="print-timetable-container flex-1">{children}</div>
+          <div className="print-timetable-container flex flex-1 flex-col">
+            {children}
+          </div>
         </div>
       </main>
 

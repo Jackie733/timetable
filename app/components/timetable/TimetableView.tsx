@@ -105,11 +105,13 @@ export function TimetableView({
       onDragEnd={handleDragEnd}
     >
       <div
-        className={`h-full print:h-full ${
+        className={`flex h-full flex-1 flex-col print:h-full ${
           isMobile ? "mobile-scroll-container overflow-x-auto pb-2" : ""
         }`}
       >
-        <div className={`h-full print:h-full ${isMobile ? "min-w-fit" : ""}`}>
+        <div
+          className={`flex h-full flex-1 flex-col print:h-full ${isMobile ? "min-w-fit" : ""}`}
+        >
           <table
             className={`timetable-grid h-full w-full border-collapse border-spacing-0 rounded border border-gray-200 dark:border-gray-700 print:h-full ${
               isMobile
