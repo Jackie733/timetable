@@ -55,10 +55,10 @@ export function TimetableCell({
   };
 
   return (
-    <td className="h-full border-gray-200 p-0 dark:border-gray-700">
+    <td className="h-full border border-gray-200 p-0 dark:border-gray-700">
       <div
         ref={setNodeRef}
-        className={`touch-action-manipulation flex h-full cursor-pointer flex-col rounded-xs border-r border-gray-200 p-0.5 transition-colors dark:border-gray-700 ${
+        className={`touch-action-manipulation flex h-full cursor-pointer flex-col rounded-xs p-0.5 transition-colors ${
           isMobile ? "min-h-8" : "min-h-16"
         } ${
           sessions.length === 0

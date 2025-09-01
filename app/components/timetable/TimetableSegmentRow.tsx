@@ -1,5 +1,5 @@
-import type { Timetable } from "../../db";
-import { TimeUtils } from "../../utils/timeUtils";
+import type { Timetable } from "~/db";
+import { TimeUtils } from "~/utils/timeUtils";
 
 export interface TimetableSegmentRowProps {
   segment: NonNullable<Timetable["segments"]>[0];
@@ -17,7 +17,7 @@ export function TimetableSegmentRow({
   return (
     <tr key={segIndex}>
       <td
-        className={`sticky-col bg-background border-r border-gray-200 text-center align-top dark:border-gray-700 ${
+        className={`sticky-col bg-background border border-gray-200 text-center dark:border-gray-700 ${
           isMobile ? "p-1" : "p-2"
         }`}
       >
@@ -30,7 +30,7 @@ export function TimetableSegmentRow({
         </div>
         <div
           className={`text-muted-foreground ${
-            isMobile ? "text-[9px] leading-tight" : "text-[11px]"
+            isMobile ? "text-[8px] leading-tight" : "text-[10px]"
           }`}
         >
           {segment.startMinutes !== undefined &&

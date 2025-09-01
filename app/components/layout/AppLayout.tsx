@@ -87,8 +87,8 @@ export function AppLayout({
         isPrintPreview={isPrintPreview}
       />
 
-      <main className="container mx-auto flex-1 px-2 py-4 sm:px-4 sm:py-6">
-        <div className="print-keep-together">
+      <main className="container mx-auto flex flex-1 flex-col px-2 py-4 sm:px-4 sm:py-6">
+        <div className="print-keep-together flex flex-1 flex-col">
           {title && (
             <div className="print-header">
               <h1 className="print-title mb-4 text-lg font-semibold sm:text-xl">
@@ -96,7 +96,7 @@ export function AppLayout({
               </h1>
             </div>
           )}
-          <div className="print-timetable-container">{children}</div>
+          <div className="print-timetable-container flex-1">{children}</div>
         </div>
       </main>
 

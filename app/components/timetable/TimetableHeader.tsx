@@ -31,7 +31,7 @@ export function TimetableHeader({
     <thead>
       <tr>
         <th
-          className={`sticky-col border-r border-b border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${
+          className={`sticky-col border border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${
             isMobile ? "w-10 p-1 text-xs" : "w-20 p-2"
           }`}
         >
@@ -40,9 +40,7 @@ export function TimetableHeader({
         {displayDays.map((dayLabel, i) => (
           <th
             key={i}
-            className={`border-b border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${
-              i < displayDays.length - 1 ? "border-r" : ""
-            } ${isMobile ? "w-16 p-1 text-xs" : "p-2"}`}
+            className={`border border-gray-200 bg-gray-50 text-center align-middle dark:border-gray-700 dark:bg-gray-800 ${isMobile ? "w-16 p-1 text-xs" : "p-2"}`}
           >
             {isMobile ? dayLabel.replace("星期", "") : dayLabel}
           </th>
