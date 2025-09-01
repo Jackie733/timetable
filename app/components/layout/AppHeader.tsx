@@ -75,7 +75,7 @@ export function AppHeader({
           </div>
 
           {!isMobile && id && (
-            <nav className="flex items-center gap-1 text-sm">
+            <nav className="flex items-center gap-2 text-sm">
               <motion.div
                 initial={hasAnimated ? false : { opacity: 0, y: -10 }}
                 animate={hasAnimated ? false : { opacity: 1, y: 0 }}
@@ -86,7 +86,7 @@ export function AppHeader({
                 <NavLink
                   to={`/`}
                   className={({ isActive }) =>
-                    isActive ? "nav-link active" : "nav-link"
+                    isActive ? "rounded bg-gray-200/50 px-4 py-2" : "px-4 py-2"
                   }
                 >
                   主页面
@@ -102,7 +102,7 @@ export function AppHeader({
                 <NavLink
                   to={`/t/${id}/edit-grid`}
                   className={({ isActive }) =>
-                    isActive ? "nav-link active" : "nav-link"
+                    isActive ? "rounded bg-gray-200/50 px-4 py-2" : "px-4 py-2"
                   }
                 >
                   课表设置
